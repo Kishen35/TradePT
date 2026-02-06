@@ -1,0 +1,17 @@
+To install dependancies:
+  - pip install -r requirements.txt
+
+To run the web server:
+  - uvicorn app.main:app --reload
+    - API → http://127.0.0.1:8000
+    - Swagger UI → http://127.0.0.1:8000/docs
+    - ReDoc → http://127.0.0.1:8000/redoc
+
+Initialize alembic (SQLite migration tool) (no need do, alrd done once):
+  - alembic init alembic
+
+Create db migration using alembic:
+  - alembic revision --autogenerate -m "modify user column"
+
+Apply db migration using alembic:
+  - alembic upgrade head
