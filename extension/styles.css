@@ -18,7 +18,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
     font-weight: bold;
 }
 
@@ -27,11 +27,12 @@
     bottom: 60px;
     right: 0;
     width: 320px;
-    height: 550px; /* Increased height for multiple panels */
+    height: 550px;
+    /* Increased height for multiple panels */
     background: #151717;
     border: 1px solid #323738;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -48,7 +49,13 @@
     border-bottom: 1px solid #323738;
 }
 
-.popup-header button { background: none; border: none; color: #999; cursor: pointer; font-size: 20px; }
+.popup-header button {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 20px;
+}
 
 .popup-scroll-area {
     flex: 1;
@@ -61,22 +68,37 @@
 
 /* Panel Sections */
 .panel-section {
-    background: #1a1c1c;
-    border: 1px solid #323738;
+    background: #2a2d2d;
+    border: 1px solid #404545;
     border-radius: 8px;
     padding: 12px;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border-left: 3px solid #ff444f;
 }
 
 .panel-section h4 {
     margin: 0 0 8px 0;
     font-size: 10px;
     text-transform: uppercase;
-    color: #6e6e6e;
+    color: white;
     letter-spacing: 0.5px;
+    font-weight: bold;
 }
 
-.stat-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-.pos-item { font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.pos-item {
+    font-size: 12px;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+}
 
 /* Interactive Lesson Block */
 .lesson-block {
@@ -87,15 +109,57 @@
     text-align: center;
 }
 
-.lesson-block strong { font-size: 12px; color: #ff444f; display: block; margin-bottom: 4px; }
-.lesson-block p { font-size: 11px; margin: 0 0 10px 0; color: #c2c2c2; }
-.lesson-btn { background: #ff444f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
+.lesson-block strong {
+    font-size: 12px;
+    color: #ff444f;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.lesson-block p {
+    font-size: 11px;
+    margin: 0 0 10px 0;
+    color: #c2c2c2;
+}
+
+.lesson-btn {
+    background: #ff444f;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 11px;
+}
 
 /* Chat Area within Scroll */
-#chat-messages { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-.message { padding: 8px 12px; border-radius: 8px; font-size: 13px; max-width: 85%; line-height: 1.4; }
-.message.ai { background: #242828; color: #c2c2c2; align-self: flex-start; }
-.message.user { background: #ff444f; color: white; align-self: flex-end; }
+#chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.message {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    max-width: 85%;
+    line-height: 1.4;
+}
+
+.message.ai {
+    background: #242828;
+    color: #c2c2c2;
+    align-self: flex-start;
+}
+
+.message.user {
+    background: #ff444f;
+    color: white;
+    align-self: flex-end;
+}
 
 .chat-input-area {
     padding: 12px;
@@ -116,11 +180,34 @@
     font-size: 12px;
 }
 
-.chat-input-area button { background: #ff444f; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.chat-input-area button {
+    background: #ff444f;
+    color: white;
+    border: none;
+    padding: 0 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
 
 /* 2. In-line Buttons - Maintaining perfect alignment */
-.ai-advice-btn { background: #ff444f; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; text-align: center; }
-.purchase-advice { width: 100%; margin: 8px 0; padding: 10px; display: block; }
+.ai-advice-btn {
+    background: #ff444f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: center;
+}
+
+.purchase-advice {
+    width: 100%;
+    margin: 8px 0;
+    padding: 10px;
+    display: block;
+}
 
 .ai-button-container {
     display: flex !important;
@@ -130,14 +217,81 @@
     align-items: stretch !important;
 }
 
-.ai-button-container button:not(.ai-advice-btn) { flex: 1 1 auto !important; min-width: 0 !important; margin: 0 !important; }
-.close-advice { flex: 0 0 45px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; min-height: 100% !important; }
+.ai-button-container button:not(.ai-advice-btn) {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+}
+
+.close-advice {
+    flex: 0 0 45px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100% !important;
+}
 
 /* 3. Decision Overlay */
-#ai-decision-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 22000; display: none; align-items: center; justify-content: center; }
-.overlay-content { background: #151717; width: 340px; border-radius: 8px; border: 1px solid #323738; overflow: hidden; }
-.overlay-header { padding: 14px; background: #242828; display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; }
-.overlay-body { padding: 20px; color: #c2c2c2; font-size: 14px; }
-.advice-status.good { background: rgba(75, 181, 67, 0.15); color: #4bb543; border: 1px solid #4bb543; padding: 8px; border-radius: 4px; text-align: center; margin-bottom: 15px; font-weight: bold; }
-.overlay-footer { padding: 16px; text-align: center; }
-.overlay-footer button { background: #ff444f; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+#ai-decision-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 22000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.overlay-content {
+    background: #151717;
+    width: 340px;
+    border-radius: 8px;
+    border: 1px solid #323738;
+    overflow: hidden;
+}
+
+.overlay-header {
+    padding: 14px;
+    background: #242828;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+}
+
+.overlay-body {
+    padding: 20px;
+    color: #c2c2c2;
+    font-size: 14px;
+}
+
+.advice-status.good {
+    background: rgba(75, 181, 67, 0.15);
+    color: #4bb543;
+    border: 1px solid #4bb543;
+    padding: 8px;
+    border-radius: 4px;
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.overlay-footer {
+    padding: 16px;
+    text-align: center;
+}
+
+.overlay-footer button {
+    background: #ff444f;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
