@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../styles.css">
     <style>
         /* Override sikit untuk Input supaya cantik macam Chat tanpa ubah styles.css */
         .login-input {
@@ -19,23 +20,53 @@
             margin-bottom: 10px;
             font-family: 'IBM Plex Sans', sans-serif;
         }
-        .login-input:focus { border-color: #ff444f; }
-        label { display: block; font-size: 11px; color: #999; margin-bottom: 5px; font-weight: bold; }
-        
+
+        .login-input:focus {
+            border-color: #ff444f;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
         /* Pastikan popup muat dalam extension window */
-        body { margin: 0; padding: 0; width: 320px; height: 550px; overflow: hidden; background: #151717; }
+        body {
+            margin: 0;
+            padding: 0;
+            width: 320px;
+            height: 550px;
+            overflow: hidden;
+            background: #151717;
+        }
+
+        #ai-insights-popup {
+            position: relative;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border: none;
+            box-shadow: none;
+        }
     </style>
 </head>
+
 <body>
 
-    <div id="ai-insights-popup" style="position: relative; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height: 100%; margin: 0; border: none; box-shadow: none;">
-        
+    <div id="ai-insights-popup">
         <div class="popup-header">
             <span>🔐 TradePT Login</span>
         </div>
 
         <div class="popup-scroll-area">
-            
+
             <div class="panel-section">
                 <h4>Welcome Trader</h4>
                 <p style="font-size: 12px; color: #c2c2c2; margin-bottom: 15px;">Sign in to access AI signals.</p>
@@ -47,23 +78,20 @@
                     <label>PASSWORD</label>
                     <input type="password" class="login-input" required placeholder="••••••••">
 
-                    <button type="submit" class="lesson-btn" style="width: 100%; padding: 10px; font-size: 13px; margin-top: 10px;">LOG IN</button>
+                    <button type="submit" class="lesson-btn"
+                        style="width: 100%; padding: 10px; font-size: 13px; margin-top: 10px;">LOG IN</button>
                 </form>
             </div>
 
             <div class="lesson-block" style="border: none; background: transparent; padding: 0;">
-                <p>New user? <a href="signup.html" style="color: #ff444f; font-weight: bold; text-decoration: none;">Create Account</a></p>
+                <p>New user? <a href="signup.html"
+                        style="color: #ff444f; font-weight: bold; text-decoration: none;">Create Account</a></p>
             </div>
 
         </div>
     </div>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            // Terus ke questionnaire
-            window.location.href = 'questionnaire.html';
-        });
-    </script>
+    <script src="./js/login.js" type="module"></script>
 </body>
+
 </html>
