@@ -28,11 +28,6 @@ def register_user(user: UserSchemas.UserCreate, db: Session = Depends(get_db)):
 # List all users
 @router.get("/", response_model=list[UserSchemas.UserResponse])
 async def list_users(db: Session = Depends(get_db)):
-    # await deriv_api.authorize(deriv_api_token)
-    # authorize = await deriv_api.balance()
-    # authorize = await deriv_api.exchange_rates({"base_currency": 'USD'})
-    # authorize = await deriv_api.portfolio()
-    # print(authorize)
     return db.query(UserModels.User).all()
 
 # Login user (together with Deriv account)

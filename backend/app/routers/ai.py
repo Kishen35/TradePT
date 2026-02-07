@@ -1,4 +1,5 @@
-# Re-export the ai_insights router
-# This keeps the import in main.py simple while using the full ai_insights implementation
+from fastapi import APIRouter
 
-from app.routers.ai_insights import router
+router = APIRouter(prefix="/ai", tags=["ai"])
+
+# TODO: Implement AI-related endpoints here
