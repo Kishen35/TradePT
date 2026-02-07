@@ -440,7 +440,8 @@ function injectInlineButtons() {
         }
     });
 
-    // Close Advice
+    // Close/Sell Advice - Enhanced to detect both Close and Sell buttons
+    // Method 1: Find buttons by text content (Close)
     const closeButtons = document.querySelectorAll('button[id^="dc_contract_card_"][id$="_button"], .dc-table__cell button.dc-btn--secondary');
     closeButtons.forEach(btn => {
         if (btn.innerText.toLowerCase() !== 'close') return;
@@ -454,6 +455,49 @@ function injectInlineButtons() {
         adviceBtn.innerText = 'AI';
         adviceBtn.onclick = (e) => { e.preventDefault(); showDecisionOverlay('close'); };
         container.appendChild(adviceBtn);
+    });
+
+    // Method 2: Find Sell buttons using the specific selector pattern
+    const sellButtons = document.querySelectorAll('[id^="dc_contract_card_"] > div > div > button');
+    sellButtons.forEach(btn => {
+        // Check if it's a Sell button by text content
+        if (btn.innerText.toLowerCase() !== 'sell') return;
+        if (btn.parentElement.classList.contains('ai-button-container')) return;
+        
+        console.log('Found Sell button:', btn.id, btn.innerText);
+        
+        const container = document.createElement('div');
+        container.className = 'ai-button-container';
+        btn.parentNode.insertBefore(container, btn);
+        container.appendChild(btn);
+        const adviceBtn = document.createElement('button');
+        adviceBtn.className = 'ai-advice-btn close-advice';
+        adviceBtn.innerText = 'AI';
+        adviceBtn.onclick = (e) => { e.preventDefault(); showDecisionOverlay('close'); };
+        container.appendChild(adviceBtn);
+    });
+
+    // Method 3: Generic approach for any Close/Sell buttons we might have missed
+    const allButtons = document.querySelectorAll('button');
+    allButtons.forEach(btn => {
+        const buttonText = btn.innerText.toLowerCase();
+        if ((buttonText === 'close' || buttonText === 'sell') && 
+            btn.offsetWidth > 0 && 
+            !btn.parentElement.classList.contains('ai-button-container') &&
+            !btn.classList.contains('ai-advice-btn')) {
+            
+            console.log('Found additional Close/Sell button:', btn.className, btn.innerText);
+            
+            const container = document.createElement('div');
+            container.className = 'ai-button-container';
+            btn.parentNode.insertBefore(container, btn);
+            container.appendChild(btn);
+            const adviceBtn = document.createElement('button');
+            adviceBtn.className = 'ai-advice-btn close-advice';
+            adviceBtn.innerText = 'AI';
+            adviceBtn.onclick = (e) => { e.preventDefault(); showDecisionOverlay('close'); };
+            container.appendChild(adviceBtn);
+        }
     });
 }
 
