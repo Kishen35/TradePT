@@ -1,4 +1,4 @@
-// content.js - Ultimate AI Agent v7 (Dynamic Panels)
+// content.js - Ultimate AI Agent v7 (Dynamic Panels + Background Data Persistence)
 console.log("Deriv AI Trading Tutor: Ultimate Agent Loaded.");
 
 const state = {
@@ -7,6 +7,8 @@ const state = {
   winRate: "68%",
   positions: [],
   recentTrades: [],
+  lastTradeDataFetch: 0, // Timestamp of last trade data fetch
+  backgroundDataValid: false,
 };
 
 class Chatbox {
@@ -90,15 +92,6 @@ class Chatbox {
     });
   }
 
-  addMessage(sender, text) {
-    const chatMessages = document.getElementById("chat-messages");
-    const msg = document.createElement("div");
-    msg.className = `message ${sender}`;
-    msg.innerText = text;
-    chatMessages.appendChild(msg);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-
   sendMessage() {
     const input = document.getElementById("user-input");
     const text = input.value.trim();
@@ -117,6 +110,15 @@ class Chatbox {
           ", I recommend sticking to a 1:2 risk-to-reward ratio.",
       );
     }, 1000);
+  }
+
+  addMessage(sender, text) {
+    const chatMessages = document.getElementById("chat-messages");
+    const msg = document.createElement("div");
+    msg.className = `message ${sender}`;
+    msg.innerText = text;
+    chatMessages.appendChild(msg);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
   // 4. In-Line Button Injection (Maintaining perfect alignment)
@@ -145,7 +147,8 @@ class Chatbox {
       }
     });
 
-    // Close Advice
+    // Close/Sell Advice - Enhanced to detect both Close and Sell buttons
+    // Method 1: Find buttons by text content (Close)
     const closeButtons = document.querySelectorAll(
       'button[id^="dc_contract_card_"][id$="_button"], .dc-table__cell button.dc-btn--secondary',
     );
@@ -164,6 +167,62 @@ class Chatbox {
         this.showDecisionOverlay("close");
       };
       container.appendChild(adviceBtn);
+    });
+
+    // Method 2: Find Sell buttons using the specific selector pattern
+    const sellButtons = document.querySelectorAll(
+      '[id^="dc_contract_card_"] > div > div > button',
+    );
+    sellButtons.forEach((btn) => {
+      // Check if it's a Sell button by text content
+      if (btn.innerText.toLowerCase() !== "sell") return;
+      if (btn.parentElement.classList.contains("ai-button-container")) return;
+
+      console.log("Found Sell button:", btn.id, btn.innerText);
+
+      const container = document.createElement("div");
+      container.className = "ai-button-container";
+      btn.parentNode.insertBefore(container, btn);
+      container.appendChild(btn);
+      const adviceBtn = document.createElement("button");
+      adviceBtn.className = "ai-advice-btn close-advice";
+      adviceBtn.innerText = "AI";
+      adviceBtn.onclick = (e) => {
+        e.preventDefault();
+        this.showDecisionOverlay("close");
+      };
+      container.appendChild(adviceBtn);
+    });
+
+    // Method 3: Generic approach for any Close/Sell buttons we might have missed
+    const allButtons = document.querySelectorAll("button");
+    allButtons.forEach((btn) => {
+      const buttonText = btn.innerText.toLowerCase();
+      if (
+        (buttonText === "close" || buttonText === "sell") &&
+        btn.offsetWidth > 0 &&
+        !btn.parentElement.classList.contains("ai-button-container") &&
+        !btn.classList.contains("ai-advice-btn")
+      ) {
+        console.log(
+          "Found additional Close/Sell button:",
+          btn.className,
+          btn.innerText,
+        );
+
+        const container = document.createElement("div");
+        container.className = "ai-button-container";
+        btn.parentNode.insertBefore(container, btn);
+        container.appendChild(btn);
+        const adviceBtn = document.createElement("button");
+        adviceBtn.className = "ai-advice-btn close-advice";
+        adviceBtn.innerText = "AI";
+        adviceBtn.onclick = (e) => {
+          e.preventDefault();
+          this.showDecisionOverlay("close");
+        };
+        container.appendChild(adviceBtn);
+      }
     });
   }
 
@@ -352,24 +411,16 @@ class Scraper {
     this.updater.updatePositionsPanel();
   }
 
-  // 1d. Recent Trades Scraper (for profit/statement pages)
+  // 1d. Recent Trades Scraper (for profit page only)
   scrapeRecentTrades() {
-    state.recentTrades = []; // Reset trades array
-
     const url = window.location.href;
 
-    // Only scrape on profit or statement pages
-    if (
-      !url.includes("/reports/profit") &&
-      !url.includes("/reports/statement")
-    ) {
+    // Only scrape on profit page (not statement page - that's just trade history without P&L)
+    if (!url.includes("/reports/profit")) {
       return;
     }
 
-    console.log(
-      "Scraping recent trades on:",
-      url.includes("/reports/profit") ? "profit page" : "statement page",
-    );
+    console.log("Scraping recent trades on profit page...");
 
     // Look for trade rows - they have IDs like dt_reports_contract_305945452408
     const tradeRows = document.querySelectorAll('[id^="dt_reports_contract_"]');
@@ -379,26 +430,18 @@ class Scraper {
     // Get last 5 trades (or fewer if less available)
     const last5Trades = Array.from(tradeRows).slice(0, 5);
 
+    // Reset trades array only if we found new data
+    if (last5Trades.length > 0) {
+      state.recentTrades = [];
+    }
+
     last5Trades.forEach((row, index) => {
       try {
-        let pnlEl = null;
-        let isProfit = false;
-
-        if (url.includes("/reports/profit")) {
-          // Profit page selectors
-          pnlEl = row.querySelector(".table__cell.profit_loss > span");
-          // Check if it has profit class (you mentioned _profit for profit)
-          isProfit =
-            row.querySelector(".table__cell.profit_loss .amount--profit") !==
-            null;
-        } else if (url.includes("/reports/statement")) {
-          // Statement page selectors
-          pnlEl =
-            row.querySelector(".table__cell.amount .amount--profit") ||
-            row.querySelector(".table__cell.amount .amount--loss");
-          isProfit =
-            row.querySelector(".table__cell.amount .amount--profit") !== null;
-        }
+        // Profit page selectors only
+        const pnlEl = row.querySelector(".table__cell.profit_loss > span");
+        const isProfit =
+          row.querySelector(".table__cell.profit_loss .amount--profit") !==
+          null;
 
         console.log(`Trade ${index}:`, {
           pnlHTML: pnlEl ? pnlEl.innerHTML : "not found",
@@ -426,12 +469,67 @@ class Scraper {
 
     console.log("Total trades found:", state.recentTrades.length);
 
+    // Update timestamp and save to persistence if we got new data
+    if (state.recentTrades.length > 0) {
+      state.lastTradeDataFetch = Date.now();
+      state.backgroundDataValid = true;
+      this.updater.saveDataToPersistence();
+    }
+
     // Update the performance panel
     this.updater.updatePerformancePanel();
   }
 }
 
 class Updater {
+  // 0. Background Data Persistence System
+  loadPersistedData() {
+    try {
+      const savedData = localStorage.getItem("deriv-ai-tutor-data");
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        // Only load trade data if it's less than 5 minutes old
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+
+        if (
+          parsed.lastTradeDataFetch &&
+          parsed.lastTradeDataFetch > fiveMinutesAgo
+        ) {
+          state.recentTrades = parsed.recentTrades || [];
+          state.winRate = parsed.winRate || "68%";
+          state.lastTradeDataFetch = parsed.lastTradeDataFetch;
+          state.backgroundDataValid = true;
+          console.log("Loaded persisted trade data:", {
+            trades: state.recentTrades.length,
+            winRate: state.winRate,
+            age:
+              Math.round((Date.now() - state.lastTradeDataFetch) / 1000) +
+              "s ago",
+          });
+        }
+      }
+    } catch (error) {
+      console.log("Error loading persisted data:", error);
+    }
+  }
+
+  saveDataToPersistence() {
+    try {
+      const dataToSave = {
+        recentTrades: state.recentTrades,
+        winRate: state.winRate,
+        lastTradeDataFetch: state.lastTradeDataFetch,
+      };
+      localStorage.setItem("deriv-ai-tutor-data", JSON.stringify(dataToSave));
+      console.log("Saved data to persistence:", {
+        trades: state.recentTrades.length,
+        winRate: state.winRate,
+      });
+    } catch (error) {
+      console.log("Error saving data to persistence:", error);
+    }
+  }
+
   // 1e. Update Performance Panel with Live Data
   updatePerformancePanel() {
     const perfContainer = document.querySelector("#panel-performance");
@@ -557,18 +655,18 @@ class Updater {
     const posPanel = document.getElementById("panel-positions");
     const perfPanel = document.getElementById("panel-performance");
 
-    // Toggle Positions Panel
-    if (url.includes("/dtrader") || url.includes("/reports/positions")) {
-      if (posPanel) posPanel.style.display = "block";
-    } else {
-      if (posPanel) posPanel.style.display = "none";
-    }
+    // Hide Positions Panel completely - no longer needed
+    if (posPanel) posPanel.style.display = "none";
 
-    // Toggle Performance Panel
-    if (url.includes("/reports/profit") || url.includes("/reports/statement")) {
-      if (perfPanel) perfPanel.style.display = "block";
-    } else {
-      if (perfPanel) perfPanel.style.display = "none";
+    // Show Performance Panel persistently when we have trade data (from background persistence)
+    if (perfPanel) {
+      if (state.backgroundDataValid && state.recentTrades.length > 0) {
+        perfPanel.style.display = "block";
+        // Update the panel with current data
+        this.updatePerformancePanel();
+      } else {
+        perfPanel.style.display = "none";
+      }
     }
   }
 }
@@ -581,17 +679,48 @@ const extractTextFromHTML = (html) => {
   return tempDiv.innerText.trim();
 };
 
+const backgroundDataFetcher = (scraper, updater) => {
+  const url = window.location.href;
+
+  // Only fetch from profit page (not statement page)
+  if (url.includes("/reports/profit")) {
+    const timeSinceLastFetch = Date.now() - state.lastTradeDataFetch;
+    const oneMinute = 60 * 1000;
+
+    // Only fetch if it's been more than 1 minute since last fetch
+    if (timeSinceLastFetch > oneMinute) {
+      console.log("Background fetching trade data from profit page...");
+      scraper.scrapeRecentTrades();
+    }
+  }
+
+  // Always update Smart Insights if we have background data
+  if (state.backgroundDataValid && state.recentTrades.length > 0) {
+    updater.updateSmartInsights();
+  }
+};
+
 /** Main Code */
 const chatbot = new Chatbox();
 const scraper = new Scraper();
+const updater = new Updater();
 
 // Init
 function init() {
+  // Load any persisted data first
+  updater.loadPersistedData();
+
   chatbot.injectFloatingBubble();
+
+  // Main scraping interval (every 6 seconds)
   setInterval(() => {
     scraper.scrapeContext();
     chatbot.injectInlineButtons();
-  }, 2000);
-}
+  }, 6000); // 6 seconds
 
+  // Background data fetcher (every 30 seconds)
+  setInterval(() => {
+    backgroundDataFetcher(scraper, updater);
+  }, 30000); // 30 seconds
+}
 setTimeout(init, 3000);
