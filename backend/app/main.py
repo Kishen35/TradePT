@@ -1,25 +1,11 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.config.db import SessionLocal
-from app.routers import users, ai_insights
+from app.routers import ai, deriv, users
 
-app = FastAPI(
-    title="TradePT Backend (with Python FastAPI + SQLite)",
-    description="AI-powered trading education platform API",
-    version="1.0.0"
-)
-
-# CORS middleware for Chrome extension
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = FastAPI(title="TradePT Backend (with Python FastAPI + SQLite)")
 
 app.include_router(users.router)
-app.include_router(ai_insights.router)
+app.include_router(ai.router)
+app.include_router(deriv.router)
 
 @app.get("/")
 def health():

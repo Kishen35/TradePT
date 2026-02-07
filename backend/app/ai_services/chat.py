@@ -17,6 +17,7 @@ from app.prompts.chat_prompts import (
     CONTEXT_BUILDING_TEMPLATE,
     QUICK_RESPONSES
 )
+from app.ai_services.deriv_market import get_market_service
 
 logger = logging.getLogger(__name__)
 
@@ -112,13 +113,38 @@ class TradingChatBot:
 
         context_str = ""
         if user_context:
+            # Parse questionnaire preferences
+            experience_level = user_context.get("experience_level", "beginner")
+            trading_style = user_context.get("trading_style", "day_trader")
+            risk_behavior = user_context.get("risk_behavior", "conservative")
+            risk_per_trade = user_context.get("risk_per_trade", 2.0)
+            preferred_assets = user_context.get("preferred_assets", [])
+
+            # Parse performance data
+            skill_level = user_context.get("skill_level", experience_level)
+            instruments = user_context.get("instruments", preferred_assets)
+            trend = user_context.get("trend", "unknown")
+            win_rate = user_context.get("win_rate", "unknown")
+            patterns = user_context.get("patterns", [])
+
+            # Market context placeholder (will be populated by deriv_market service)
+            market_context = user_context.get("market_context", "Market data not available")
+
             context_str = CONTEXT_BUILDING_TEMPLATE.format(
-                skill_level=user_context.get("skill_level", "unknown"),
-                instruments=", ".join(user_context.get("instruments", [])) or "various",
-                experience=user_context.get("experience", "unknown"),
-                trend=user_context.get("trend", "unknown"),
-                win_rate=user_context.get("win_rate", "unknown"),
-                patterns=", ".join(user_context.get("patterns", [])) or "none detected"
+                # Questionnaire preferences
+                experience_level=experience_level,
+                trading_style=trading_style,
+                risk_behavior=risk_behavior,
+                risk_per_trade=risk_per_trade,
+                preferred_assets=", ".join(preferred_assets) if preferred_assets else "various",
+                # Performance data
+                skill_level=skill_level,
+                instruments=", ".join(instruments) if isinstance(instruments, list) else instruments or "various",
+                trend=trend,
+                win_rate=win_rate,
+                patterns=", ".join(patterns) if patterns else "none detected",
+                # Market context
+                market_context=market_context
             )
 
         session = ChatSession(
@@ -148,6 +174,20 @@ class TradingChatBot:
         Returns:
             Tuple of (response, session_id)
         """
+        # Fetch market context from Deriv API
+        if user_context is None:
+            user_context = {}
+
+        if "market_context" not in user_context:
+            try:
+                market_service = get_market_service()
+                preferred_assets = user_context.get("preferred_assets", [])
+                market_context = await market_service.get_market_context_safe(preferred_assets)
+                user_context["market_context"] = market_context
+            except Exception as e:
+                logger.warning(f"Could not fetch market context: {e}")
+                user_context["market_context"] = "Market data temporarily unavailable"
+
         # Get or create session
         session = self.get_or_create_session(session_id, user_id, user_context)
 
@@ -222,6 +262,16 @@ class TradingChatBot:
         goodbye_keywords = ["bye", "goodbye", "see you", "thanks bye", "thank you bye"]
         if any(kw in message_lower for kw in goodbye_keywords):
             return QUICK_RESPONSES["goodbye"]
+
+        # Off-topic questions (weather, sports, entertainment, etc.)
+        off_topic_keywords = [
+            "weather", "sports", "movie", "music", "food", "recipe",
+            "joke", "game", "celebrity", "politics", "news", "netflix",
+            "football", "basketball", "soccer", "concert", "party",
+            "restaurant", "travel", "vacation", "holiday"
+        ]
+        if any(kw in message_lower for kw in off_topic_keywords):
+            return QUICK_RESPONSES["off_topic"]
 
         return None
 

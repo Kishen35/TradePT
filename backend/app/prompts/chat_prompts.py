@@ -49,14 +49,33 @@ User's latest message: {user_message}
 Respond helpfully while maintaining context from the conversation. Keep your response focused and relevant.
 """
 
-# Template for building user context
-CONTEXT_BUILDING_TEMPLATE = """User Profile Summary:
+# Template for building user context with questionnaire preferences
+CONTEXT_BUILDING_TEMPLATE = """User Trading Profile:
+
+## Questionnaire Preferences (from onboarding)
+- Experience Level: {experience_level}
+- Trading Style: {trading_style}
+- Risk Behavior: {risk_behavior}
+- Risk Per Trade: {risk_per_trade}%
+- Preferred Assets: {preferred_assets}
+
+## Performance Data
 - Skill Level: {skill_level}
 - Primary Instruments: {instruments}
-- Trading Experience: {experience}
 - Recent Performance Trend: {trend}
 - Win Rate: {win_rate}%
 - Recent Patterns Detected: {patterns}
+
+## Current Market Context
+{market_context}
+
+IMPORTANT: Tailor your responses based on the user's profile:
+- For beginners: Use simple explanations, avoid jargon, include more warnings
+- For advanced traders: Use technical terms, skip basics, focus on strategy
+- For conservative risk behavior: Emphasize capital preservation and smaller positions
+- For aggressive risk behavior: Acknowledge their strategy while discussing risk management
+- For scalpers: Focus on quick entries, tight stops, momentum
+- For swing traders: Discuss patience, larger moves, trend analysis
 """
 
 # Quick responses for common queries

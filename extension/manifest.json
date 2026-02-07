@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Deriv AI Trading Tutor",
+  "version": "1.0",
+  "description": "Personalized AI agent for trading education on Deriv DTrader.",
+  "permissions": ["activeTab", "scripting"],
+  "content_scripts": [
+    {
+      "matches": ["https://app.deriv.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "48": "icon.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icon.png"],
+      "matches": ["https://app.deriv.com/*"]
+    }
+  ]
+}

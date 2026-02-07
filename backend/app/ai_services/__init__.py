@@ -43,6 +43,12 @@ from app.ai_services.embeddings import (
     get_embedding_service,
     EmbeddingService
 )
+from app.ai_services.deriv_market import (
+    get_market_service,
+    DerivMarketService,
+    MarketSnapshot,
+    AccountInfo
+)
 
 __all__ = [
     # Analysis
@@ -73,4 +79,9 @@ __all__ = [
     # Embeddings
     "get_embedding_service",
     "EmbeddingService",
+    # Deriv Market Data
+    "get_market_service",
+    "DerivMarketService",
+    "MarketSnapshot",
+    "AccountInfo",
 ]

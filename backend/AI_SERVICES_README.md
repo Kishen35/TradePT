@@ -1,373 +1,249 @@
-# TradePT AI Services
+# TradePT AI - How It Works
 
-AI-powered trading analysis, education, and chat services for the TradePT platform.
+## What is TradePT AI?
 
-## Overview
+TradePT AI is like a **smart trading teacher** that lives in your browser.
 
-The AI integration layer provides:
-- **Trading Insights**: AI-generated analysis of trading patterns and performance
-- **Educational Content**: Personalized lessons based on skill level and weaknesses
-- **Chat Assistant**: Conversational trading help with context awareness
-- **Semantic Search**: Vector embeddings for matching patterns to relevant lessons
+When you click the AI button, it does 2 things:
+1. **Looks at the market** - What's happening right now? (prices, your balance, open trades)
+2. **Remembers who you are** - Are you a beginner? Do you like forex? Are you careful or risky?
 
-## Architecture
+Then it gives you advice like a friendly teacher would!
+
+---
+
+## How It Works (Simple Picture)
 
 ```
-backend/app/
-├── ai_services/              # AI service implementations
-│   ├── __init__.py          # Module exports
-│   ├── analysis.py          # Statistical analysis & pattern detection
-│   ├── insights.py          # Groq AI insight generation
-│   ├── education.py         # Claude lesson generation
-│   ├── chat.py              # Conversational assistant
-│   └── embeddings.py        # Semantic search with sentence-transformers
-│
-├── config/
-│   └── ai_config.py         # API keys and settings
-│
-├── prompts/                  # LLM prompt templates
-│   ├── insight_prompts.py   # Insight generation prompts
-│   ├── education_prompts.py # Lesson generation prompts
-│   └── chat_prompts.py      # Chat interaction prompts
-│
-└── routers/
-    └── ai_insights.py       # FastAPI endpoints
+You click the AI button
+        |
+        v
++---------------------------+
+|  Backend gets 2 things:   |
+|  1. Market data (Deriv)   |
+|  2. Your preferences      |
++---------------------------+
+        |
+        v
++---------------------------+
+|  Send everything to       |
+|  Claude AI (the brain)    |
++---------------------------+
+        |
+        v
++---------------------------+
+|  Claude gives you:        |
+|  - Trading tips           |
+|  - Buy/sell reasons       |
+|  - Lessons to learn       |
++---------------------------+
+        |
+        v
+   You see the answer!
 ```
 
-## API Endpoints
+---
 
-### GET /ai/insights/{user_id}
-Generate personalized trading insights.
+## The 3 Main Features
 
-**Parameters:**
-- `user_id` (path): User's ID
-- `days` (query, default=7): Days to analyze (1-90)
-- `user_level` (query, default="beginner"): Skill level
+### 1. Trading Insights (`/ai/insights`)
+**"Tell me how I'm doing as a trader"**
 
-**Response:**
-```json
-{
-  "summary": "Analyzed 15 trades with 60% win rate",
-  "insights": [
-    {"type": "strength", "message": "Strong win rate!", "priority": "high"}
-  ],
-  "recommendations": ["Consider reducing position sizes after losses"],
-  "statistics": {"win_rate": 60.0, "total_trades": 15},
-  "suggested_lesson": "Risk Management Basics",
-  "generated_at": "2024-01-15T10:30:00"
-}
-```
+What it does:
+- Looks at your recent trades
+- Tells you what you're good at
+- Shows what you need to improve
+- Suggests lessons to learn
 
-**curl Example:**
-```bash
-curl http://localhost:8000/ai/insights/1?days=7&user_level=beginner
-```
+### 2. Chat Assistant (`/ai/chat`)
+**"Ask me anything about trading"**
 
-### POST /ai/lesson/generate
-Generate a personalized lesson.
+What it does:
+- Answers trading questions
+- Explains confusing words
+- Gives advice based on YOUR profile
+- Remembers your conversation
 
-**Request Body:**
-```json
-{
-  "topic": "Risk Management Basics",
-  "skill_level": "beginner",
-  "instruments": ["EURUSD", "BTC/USD"],
-  "weakness": "position sizing",
-  "length": "medium",
-  "include_examples": true
-}
-```
+### 3. Lesson Generator (`/ai/lesson/generate`)
+**"Teach me something new"**
 
-**Response:**
-```json
-{
-  "title": "Risk Management Fundamentals",
-  "skill_level": "beginner",
-  "estimated_time_minutes": 15,
-  "sections": [
-    {"heading": "Introduction", "content": "...", "type": "text"}
-  ],
-  "quiz": [
-    {"question": "What is the 1% rule?", "options": [...], "correct": "A", "explanation": "..."}
-  ],
-  "key_takeaways": ["Never risk more than 1-2% per trade"]
-}
-```
+What it does:
+- Creates custom lessons just for you
+- Based on what you need to learn
+- Includes quizzes to test yourself
 
-**curl Example:**
-```bash
-curl -X POST http://localhost:8000/ai/lesson/generate \
-  -H "Content-Type: application/json" \
-  -d '{"topic": "Stop Loss Strategies", "skill_level": "beginner"}'
-```
+---
 
-### POST /ai/chat
-Chat with the trading assistant.
+## How to Test (Using Postman)
 
-**Request Body:**
-```json
-{
-  "user_id": 1,
-  "message": "What is a stop loss?",
-  "session_id": "optional-uuid"
-}
-```
-
-**Response:**
-```json
-{
-  "session_id": "uuid",
-  "response": "A stop loss is an order to close your position..."
-}
-```
-
-**curl Example:**
-```bash
-curl -X POST http://localhost:8000/ai/chat \
-  -H "Content-Type: application/json" \
-  -d '{"user_id": 1, "message": "Hello!"}'
-```
-
-### GET /ai/suggest-topic/{user_id}
-Get recommended lesson topics.
-
-**Parameters:**
-- `user_id` (path): User's ID
-- `skill_level` (query, default="beginner"): Skill level
-
-**Response:**
-```json
-{
-  "topics": [
-    {"topic": "Managing Trading Emotions", "relevance_score": 0.95, "reason": "Based on detected revenge trading pattern"}
-  ]
-}
-```
-
-### GET /ai/health
-Check AI services status.
-
-```bash
-curl http://localhost:8000/ai/health
-```
-
-## Setup Instructions
-
-### 1. Install Dependencies
-
-```bash
-cd backend
-pip install -r requirements.txt
-```
-
-### 2. Configure API Keys
-
-Copy the example environment file:
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your API keys:
-```
-GROQ_API_KEY=your_groq_api_key_here
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-```
-
-### 3. Get API Keys
-
-**Groq API (for fast insights):**
-1. Go to https://console.groq.com/
-2. Create an account
-3. Generate an API key
-
-**Anthropic API (for education & chat):**
-1. Go to https://console.anthropic.com/
-2. Create an account
-3. Generate an API key
-
-### 4. Start the Server
-
+### Step 1: Start the Server
 ```bash
 cd backend
 uvicorn app.main:app --reload
 ```
 
-### 5. Test the Endpoints
+### Step 2: Open Postman and Try These
 
-```bash
-# Health check
-curl http://localhost:8000/ai/health
+#### Test 1: Check if AI is Working
+```
+Method: GET
+URL: http://localhost:8000/ai/health
 
-# Get insights
-curl http://localhost:8000/ai/insights/1
-
-# Chat
-curl -X POST http://localhost:8000/ai/chat \
-  -H "Content-Type: application/json" \
-  -d '{"user_id": 1, "message": "Hello!"}'
+What you should see:
+{
+  "anthropic_configured": true,
+  "embedding_available": true
+}
 ```
 
-## How It Works
-
-### Data Flow
-
+#### Test 2: Ask a Trading Question
 ```
-User Trade Data → Analysis → Pattern Detection → AI Generation → Personalized Response
-                    ↓
-            Statistics:          Patterns:             AI APIs:
-            - Win rate          - Revenge trading     - Groq (insights)
-            - Profit/Loss       - Overtrading         - Claude (education)
-            - Trade frequency   - Risk issues         - Local embeddings
+Method: POST
+URL: http://localhost:8000/ai/chat
+Headers: Content-Type: application/json
+Body:
+{
+  "user_id": 1,
+  "message": "What is a stop loss?"
+}
+
+What you should see:
+{
+  "session_id": "some-id-here",
+  "response": "A stop loss is an order that automatically closes..."
+}
 ```
 
-### Pattern Detection
+#### Test 3: Get Trading Insights
+```
+Method: GET
+URL: http://localhost:8000/ai/insights/1
 
-The system detects these trading patterns:
+What you should see:
+{
+  "summary": "Analyzed your trades...",
+  "insights": [...],
+  "recommendations": [...]
+}
+```
 
-| Pattern | Detection Criteria | Action |
-|---------|-------------------|--------|
-| Revenge Trading | Rapid trades after losses (<30 min) | Suggest break, emotion lesson |
-| Overtrading | >10 trades per day average | Suggest trading plan lesson |
-| Risk Issues | Average loss > 2x average win | Suggest position sizing lesson |
-| Consistent Timing | Low trading hour variance | Positive reinforcement |
+#### Test 4: Test Off-Topic Question (Should Redirect)
+```
+Method: POST
+URL: http://localhost:8000/ai/chat
+Body:
+{
+  "user_id": 1,
+  "message": "What's the weather like?"
+}
 
-### Prompt Engineering
+What you should see:
+{
+  "response": "That's an interesting topic, but I'm specialized in trading..."
+}
+```
 
-**Insight Prompts:** Focus on being supportive, actionable, and concise.
-- Temperature: 0.7 (creative but focused)
-- Max tokens: 2048
-- JSON response format enforced
+---
 
-**Education Prompts:** Create structured, skill-appropriate content.
-- Temperature: 0.8 (more creative for engagement)
-- Max tokens: 4096
-- Includes quiz generation
+## For Frontend/Extension Team
 
-**Chat Prompts:** Conversational, educational, with user context.
-- Temperature: 0.7
-- Max tokens: 1024
-- Maintains conversation history
+### Sending User Preferences
 
-## Technical Decisions
+When you call the chat, include user info like this:
 
-### Why Groq for Insights?
-- **Speed**: Groq is extremely fast (~50ms response)
-- **Cost**: Lower cost per token
-- **JSON Mode**: Native JSON response support
-- **Best for**: Short, focused analysis
+```json
+{
+  "user_id": 1,
+  "message": "Should I buy EURUSD?",
+  "user_context": {
+    "experience_level": "beginner",
+    "trading_style": "day_trader",
+    "risk_behavior": "conservative",
+    "risk_per_trade": 2.0,
+    "preferred_assets": ["EURUSD", "GBPUSD"]
+  }
+}
+```
 
-### Why Claude for Education?
-- **Quality**: Better at long-form educational content
-- **Context**: Handles complex lesson structures
-- **Best for**: Detailed explanations, quizzes
+### Converting Questionnaire Answers
 
-### Why Local Embeddings?
-- **No API Cost**: Runs locally with sentence-transformers
-- **Privacy**: Trade concepts don't leave the server
-- **Best for**: Semantic search, pattern matching
+| Question | Answer | What to Send |
+|----------|--------|--------------|
+| Experience? | Beginner | `"experience_level": "beginner"` |
+| Experience? | Intermediate | `"experience_level": "intermediate"` |
+| Experience? | Advanced | `"experience_level": "advanced"` |
+| How long trades? | Scalper | `"trading_style": "scalper"` |
+| How long trades? | Day Trader | `"trading_style": "day_trader"` |
+| How long trades? | Swing Trader | `"trading_style": "swing_trader"` |
+| Risk style? | Cut Loss | `"risk_behavior": "conservative"` |
+| Risk style? | Wait & See | `"risk_behavior": "moderate"` |
+| Risk style? | Layering | `"risk_behavior": "aggressive"` |
+| Risk %? | Low (1-2%) | `"risk_per_trade": 2.0` |
+| Risk %? | Medium (5-10%) | `"risk_per_trade": 7.5` |
+| Risk %? | High (20%+) | `"risk_per_trade": 20.0` |
+| Favorite assets? | Forex | `"preferred_assets": ["EURUSD"]` |
+| Favorite assets? | Crypto | `"preferred_assets": ["BTC/USD"]` |
 
-## Fallback Behavior
+### What You DON'T Need to Send
 
-When AI APIs are unavailable, the system provides fallback responses:
+The AI automatically gets these from Deriv:
+- Account balance
+- Open positions
+- Current prices
 
-1. **Insights**: Rule-based analysis from statistics
-2. **Lessons**: Template-based lesson structure
-3. **Chat**: Pre-defined responses for common questions
-4. **Embeddings**: Character-frequency based fallback
+You don't need to send this data!
 
-## Testing
+---
 
-Run the test suite:
+## Setup (For New Developers)
+
+### 1. Install Everything
 ```bash
 cd backend
-pytest test_ai_services.py -v
+pip install -r requirements.txt
 ```
 
-## Troubleshooting
-
-### API Key Issues
+### 2. Add Your API Key
+Create a file called `.env` in the backend folder:
 ```
-Error: Groq API key not configured
-```
-- Check that `.env` file exists
-- Verify API key is correct
-- Restart the server after adding keys
-
-### Import Errors
-```
-ModuleNotFoundError: No module named 'groq'
-```
-- Run: `pip install -r requirements.txt`
-
-### Rate Limiting
-```
-Error: Rate limit exceeded
-```
-- The system will fall back to non-AI responses
-- Consider caching responses
-- Check your API tier limits
-
-## Demo Script
-
-For judges/mentors, demonstrate:
-
-1. **Start fresh**: `uvicorn app.main:app --reload`
-
-2. **Show AI health**:
-   ```bash
-   curl http://localhost:8000/ai/health
-   ```
-
-3. **Get insights for user 1**:
-   ```bash
-   curl http://localhost:8000/ai/insights/1
-   ```
-
-4. **Chat interaction**:
-   ```bash
-   curl -X POST http://localhost:8000/ai/chat \
-     -H "Content-Type: application/json" \
-     -d '{"user_id": 1, "message": "Why do I keep losing trades?"}'
-   ```
-
-5. **Generate personalized lesson**:
-   ```bash
-   curl -X POST http://localhost:8000/ai/lesson/generate \
-     -H "Content-Type: application/json" \
-     -d '{"topic": "Managing Trading Emotions", "skill_level": "beginner"}'
-   ```
-
-6. **Key talking points**:
-   - "The AI analyzes YOUR actual trading behavior"
-   - "It detects patterns like revenge trading automatically"
-   - "Education is personalized to your weaknesses"
-   - "Works even without API keys using fallbacks"
-
-## Notes for Teammates
-
-### Trade Model Required
-
-The AI services need a Trade model. Please create in `database/models/trades.py`:
-
-```python
-class Trade(Base):
-    __tablename__ = "trades"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    contract_type = Column(String)  # "CALL", "PUT", "MULTIPLIER"
-    symbol = Column(String)         # "EURUSD", "Volatility 75"
-    buy_price = Column(Float)
-    sell_price = Column(Float, nullable=True)
-    profit_loss = Column(Float, nullable=True)
-    purchase_time = Column(DateTime)
-    sell_time = Column(DateTime, nullable=True)
+ANTHROPIC_API_KEY=your_key_here
 ```
 
-Until then, the system uses mock data for testing.
+Get your key from: https://console.anthropic.com/
 
-### Integration Points
+### 3. Start the Server
+```bash
+uvicorn app.main:app --reload
+```
 
-- Import AI router in main.py ✅
-- Call `/ai/insights/{user_id}` from Chrome extension
-- Store session_id for chat continuity
-- Pass user_context for personalization
+### 4. Test It
+Open http://localhost:8000/ai/health in your browser.
+
+---
+
+## Common Problems
+
+### "Anthropic API key not configured"
+- Check your `.env` file exists
+- Check your API key is correct
+- Restart the server
+
+### "No module named anthropic"
+```bash
+pip install anthropic
+```
+
+### Server won't start
+- Make sure you're in the `backend` folder
+- Make sure Python is installed
+
+---
+
+## That's It!
+
+The AI system is simple:
+1. **Get data** (from Deriv + user preferences)
+2. **Ask Claude** (the AI brain)
+3. **Show answer** (trading advice)
+
+Questions? Ask the team!

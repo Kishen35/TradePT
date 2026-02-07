@@ -1,7 +1,7 @@
 """
 Trading Insight Generator Service
 
-Uses Groq API to generate personalized trading insights
+Uses Claude API to generate personalized trading insights
 based on statistical analysis of user trade data.
 """
 from typing import Dict, Any, Optional, List
@@ -24,6 +24,7 @@ from app.prompts.insight_prompts import (
     PATTERN_DESCRIPTIONS,
     FALLBACK_INSIGHTS
 )
+from app.ai_services.deriv_market import get_market_service
 
 logger = logging.getLogger(__name__)
 
@@ -49,31 +50,31 @@ class InsightResponse:
 
 class InsightGenerator:
     """
-    Generates personalized trading insights using Groq AI.
+    Generates personalized trading insights using Claude AI.
 
     Combines statistical analysis with AI to provide actionable
     feedback on trading performance.
     """
 
     def __init__(self):
-        """Initialize the insight generator with Groq client."""
+        """Initialize the insight generator with Claude client."""
         self.settings = get_ai_settings()
         self._client = None
 
     def _get_client(self):
-        """Lazy load the Groq client."""
+        """Lazy load the Claude client."""
         if self._client is None:
-            if not self.settings.is_groq_configured():
-                logger.warning("Groq API key not configured. Using fallback insights.")
+            if not self.settings.is_anthropic_configured():
+                logger.warning("Anthropic API key not configured. Using fallback insights.")
                 return None
             try:
-                from groq import Groq
-                self._client = Groq(api_key=self.settings.groq_api_key)
+                import anthropic
+                self._client = anthropic.Anthropic(api_key=self.settings.anthropic_api_key)
             except ImportError:
-                logger.error("Groq package not installed.")
+                logger.error("Anthropic package not installed.")
                 return None
             except Exception as e:
-                logger.error(f"Failed to initialize Groq client: {e}")
+                logger.error(f"Failed to initialize Anthropic client: {e}")
                 return None
         return self._client
 
@@ -82,7 +83,8 @@ class InsightGenerator:
         db,
         user_id: int,
         days: int = 7,
-        user_level: str = "beginner"
+        user_level: str = "beginner",
+        user_context: Optional[Dict[str, Any]] = None
     ) -> InsightResponse:
         """
         Generate trading insights for a user.
@@ -92,6 +94,7 @@ class InsightGenerator:
             user_id: The user's ID
             days: Number of days to analyze
             user_level: User's skill level
+            user_context: Optional user preferences from questionnaire
 
         Returns:
             InsightResponse with insights and recommendations
@@ -111,12 +114,35 @@ class InsightGenerator:
         # Calculate average trade duration
         avg_duration = format_duration(statistics["average_trade_duration_hours"])
 
+        # Parse user preferences from context
+        if user_context is None:
+            user_context = {}
+
+        preferences = {
+            "experience_level": user_context.get("experience_level", user_level),
+            "trading_style": user_context.get("trading_style", "day_trader"),
+            "risk_behavior": user_context.get("risk_behavior", "conservative"),
+            "risk_per_trade": user_context.get("risk_per_trade", 2.0),
+            "preferred_assets": user_context.get("preferred_assets", [])
+        }
+
+        # Fetch market context from Deriv API
+        market_context = "Market data not available"
+        try:
+            market_service = get_market_service()
+            market_context = await market_service.get_market_context_safe(
+                preferences["preferred_assets"]
+            )
+        except Exception as e:
+            logger.warning(f"Could not fetch market context: {e}")
+
         # Try to generate AI insight
         client = self._get_client()
         if client:
             try:
-                response = await self._call_groq(
-                    statistics, pattern_text, avg_duration, days, user_level
+                response = await self._call_claude(
+                    statistics, pattern_text, avg_duration, days, user_level,
+                    preferences, market_context
                 )
                 return self._parse_response(response, statistics)
             except Exception as e:
@@ -125,18 +151,30 @@ class InsightGenerator:
         # Fall back to non-AI insights
         return self._fallback_response(statistics, patterns)
 
-    async def _call_groq(
+    async def _call_claude(
         self,
         stats: Dict[str, Any],
         pattern_text: str,
         avg_duration: str,
         days: int,
-        user_level: str
+        user_level: str,
+        preferences: Dict[str, Any] = None,
+        market_context: str = "Market data not available"
     ) -> str:
-        """Make API call to Groq."""
+        """Make API call to Claude."""
         import asyncio
 
+        if preferences is None:
+            preferences = {}
+
         prompt = INSIGHT_USER_TEMPLATE.format(
+            # User preferences from questionnaire
+            experience_level=preferences.get("experience_level", user_level),
+            trading_style=preferences.get("trading_style", "day_trader"),
+            risk_behavior=preferences.get("risk_behavior", "conservative"),
+            risk_per_trade=preferences.get("risk_per_trade", 2.0),
+            preferred_assets=", ".join(preferences.get("preferred_assets", [])) or "various",
+            # Trading statistics
             days=days,
             total_trades=stats["total_trades"],
             win_rate=stats["win_rate"],
@@ -148,23 +186,26 @@ class InsightGenerator:
             top_contract_type=stats["most_traded_contract_type"],
             largest_win=stats["largest_win"],
             largest_loss=stats["largest_loss"],
+            # Market and patterns
+            market_context=market_context,
             detected_patterns=pattern_text,
             user_level=user_level
         )
 
+        # Add JSON instruction to prompt since Claude doesn't have response_format
+        json_prompt = prompt + "\n\nIMPORTANT: Respond with valid JSON only. No other text."
+
         def _sync_call():
             client = self._get_client()
-            response = client.chat.completions.create(
-                model=self.settings.groq_model_name,
+            response = client.messages.create(
+                model=self.settings.anthropic_model_name,
+                max_tokens=self.settings.anthropic_max_tokens,
+                system=INSIGHT_SYSTEM_PROMPT + "\n\nAlways respond with valid JSON format.",
                 messages=[
-                    {"role": "system", "content": INSIGHT_SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=self.settings.groq_max_tokens,
-                temperature=self.settings.groq_temperature,
-                response_format={"type": "json_object"}
+                    {"role": "user", "content": json_prompt}
+                ]
             )
-            return response.choices[0].message.content
+            return response.content[0].text
 
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _sync_call)
@@ -187,7 +228,7 @@ class InsightGenerator:
         response: str,
         statistics: Dict[str, Any]
     ) -> InsightResponse:
-        """Parse the JSON response from Groq."""
+        """Parse the JSON response from Claude."""
         try:
             data = json.loads(response)
 
@@ -209,7 +250,7 @@ class InsightGenerator:
                 generated_at=datetime.now().isoformat()
             )
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse Groq response: {e}")
+            logger.error(f"Failed to parse Claude response: {e}")
             return self._fallback_response(statistics, [])
 
     def _empty_response(self) -> InsightResponse:

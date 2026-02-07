@@ -1,0 +1,9 @@
+- DB:
+  - users (login with this & deriv, add questionnaire detail)
+  - session (token --> user, to call api)
+  - logs (question, response, userid)
+
+- API:
+  - Deriv API (wrapper)
+  - Chat with LLM
+  - AI analysis button

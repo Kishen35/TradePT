@@ -29,6 +29,13 @@ You must respond with valid JSON only. No additional text outside the JSON struc
 # User prompt template with placeholders for statistics
 INSIGHT_USER_TEMPLATE = """Analyze the following trading statistics and provide personalized insights:
 
+## User Profile (from Questionnaire)
+- Experience Level: {experience_level}
+- Trading Style: {trading_style}
+- Risk Behavior: {risk_behavior}
+- Risk Per Trade Target: {risk_per_trade}%
+- Preferred Assets: {preferred_assets}
+
 ## Trading Statistics (Last {days} Days)
 - Total Trades: {total_trades}
 - Win Rate: {win_rate:.1f}%
@@ -41,11 +48,22 @@ INSIGHT_USER_TEMPLATE = """Analyze the following trading statistics and provide 
 - Largest Win: ${largest_win:,.2f}
 - Largest Loss: ${largest_loss:,.2f}
 
+## Current Market Context
+{market_context}
+
 ## Detected Patterns
 {detected_patterns}
 
 ## User Level
 {user_level}
+
+IMPORTANT PERSONALIZATION GUIDELINES:
+- Match the complexity of insights to the user's experience level
+- For beginners: Explain concepts simply, suggest basic improvements
+- For advanced traders: Use technical language, focus on optimization
+- Compare their actual behavior to their stated risk tolerance
+- If they say "conservative" but trade aggressively, flag this mismatch
+- Tailor recommendations to their trading style (scalper vs swing trader)
 
 Based on this data, provide insights in the following JSON format:
 {{
