@@ -1,10 +1,6 @@
 // content.js - Ultimate AI Agent v7 (Dynamic Panels + Background Data Persistence)
 console.log("Deriv AI Trading Tutor: Ultimate Agent Loaded.");
 
-// Backend API Configuration
-const API_BASE_URL = "http://localhost:8000";
-let sessionId = null;  // For chat continuity
-
 const state = {
   balance: "0.00",
   currentSymbol: "",
@@ -120,7 +116,6 @@ class Chatbox {
     const chatMessages = document.getElementById("chat-messages");
     const msg = document.createElement("div");
     msg.className = `message ${sender}`;
-    if (id) msg.id = id;
     msg.innerText = text;
     chatMessages.appendChild(msg);
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -239,8 +234,6 @@ class Chatbox {
       overlay.id = "ai-decision-overlay";
       document.body.appendChild(overlay);
     }
-
-    // Show loading state first
     overlay.innerHTML = `
         <div class="overlay-content">
             <div class="overlay-header"><span>AI Trade Assistant</span><button onclick="document.getElementById('ai-decision-overlay').style.display='none'">×</button></div>
