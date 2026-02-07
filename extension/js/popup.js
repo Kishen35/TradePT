@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     (tabs) => {
       const tab = tabs[0];
-      if (tab) {
+      if (tab && tab.url) {
         const isAtDeriv = tab.url.includes("app.deriv.com");
         if (isAtDeriv) {
           location.href = "./views/login.html";
