@@ -1,4 +1,4 @@
-// content.js - Ultimate AI Agent v7 (Dynamic Panels)
+// content.js - Ultimate AI Agent v7 (Dynamic Panels + Background Data Persistence)
 console.log("Deriv AI Trading Tutor: Ultimate Agent Loaded.");
 
 const state = {
@@ -6,8 +6,75 @@ const state = {
     currentSymbol: "",
     winRate: "68%",
     positions: [],
-    recentTrades: []
+    recentTrades: [],
+    lastTradeDataFetch: 0, // Timestamp of last trade data fetch
+    backgroundDataValid: false
 };
+
+// 0. Background Data Persistence System
+function loadPersistedData() {
+    try {
+        const savedData = localStorage.getItem('deriv-ai-tutor-data');
+        if (savedData) {
+            const parsed = JSON.parse(savedData);
+            // Only load trade data if it's less than 5 minutes old
+            const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+
+            if (parsed.lastTradeDataFetch && parsed.lastTradeDataFetch > fiveMinutesAgo) {
+                state.recentTrades = parsed.recentTrades || [];
+                state.winRate = parsed.winRate || "68%";
+                state.lastTradeDataFetch = parsed.lastTradeDataFetch;
+                state.backgroundDataValid = true;
+                console.log('Loaded persisted trade data:', {
+                    trades: state.recentTrades.length,
+                    winRate: state.winRate,
+                    age: Math.round((Date.now() - state.lastTradeDataFetch) / 1000) + 's ago'
+                });
+            }
+        }
+    } catch (error) {
+        console.log('Error loading persisted data:', error);
+    }
+}
+
+function saveDataToPersistence() {
+    try {
+        const dataToSave = {
+            recentTrades: state.recentTrades,
+            winRate: state.winRate,
+            lastTradeDataFetch: state.lastTradeDataFetch
+        };
+        localStorage.setItem('deriv-ai-tutor-data', JSON.stringify(dataToSave));
+        console.log('Saved data to persistence:', {
+            trades: state.recentTrades.length,
+            winRate: state.winRate
+        });
+    } catch (error) {
+        console.log('Error saving data to persistence:', error);
+    }
+}
+
+// 0a. Background Data Fetcher - Periodically tries to fetch trade data
+function backgroundDataFetcher() {
+    const url = window.location.href;
+
+    // Only fetch from profit page (not statement page)
+    if (url.includes('/reports/profit')) {
+        const timeSinceLastFetch = Date.now() - state.lastTradeDataFetch;
+        const oneMinute = 60 * 1000;
+
+        // Only fetch if it's been more than 1 minute since last fetch
+        if (timeSinceLastFetch > oneMinute) {
+            console.log('Background fetching trade data from profit page...');
+            scrapeRecentTrades();
+        }
+    }
+
+    // Always update Smart Insights if we have background data
+    if (state.backgroundDataValid && state.recentTrades.length > 0) {
+        updateSmartInsights();
+    }
+}
 
 // 1. Enhanced Context Scraper with Live Data (using innerHTML)
 function scrapeContext() {
@@ -32,7 +99,7 @@ function scrapeContext() {
 
     // Scrape Live Positions
     scrapeLivePositions();
-    
+
     // Scrape Recent Trades (for performance panel)
     scrapeRecentTrades();
 
@@ -117,59 +184,51 @@ function scrapeLivePositions() {
     updatePositionsPanel();
 }
 
-// 1d. Recent Trades Scraper (for profit/statement pages)
+// 1d. Recent Trades Scraper (for profit page only)
 function scrapeRecentTrades() {
-    state.recentTrades = []; // Reset trades array
-    
     const url = window.location.href;
-    
-    // Only scrape on profit or statement pages
-    if (!url.includes('/reports/profit') && !url.includes('/reports/statement')) {
+
+    // Only scrape on profit page (not statement page - that's just trade history without P&L)
+    if (!url.includes('/reports/profit')) {
         return;
     }
-    
-    console.log('Scraping recent trades on:', url.includes('/reports/profit') ? 'profit page' : 'statement page');
-    
+
+    console.log('Scraping recent trades on profit page...');
+
     // Look for trade rows - they have IDs like dt_reports_contract_305945452408
     const tradeRows = document.querySelectorAll('[id^="dt_reports_contract_"]');
-    
+
     console.log('Found trade rows:', tradeRows.length);
-    
+
     // Get last 5 trades (or fewer if less available)
     const last5Trades = Array.from(tradeRows).slice(0, 5);
-    
+
+    // Reset trades array only if we found new data
+    if (last5Trades.length > 0) {
+        state.recentTrades = [];
+    }
+
     last5Trades.forEach((row, index) => {
         try {
-            let pnlEl = null;
-            let isProfit = false;
-            
-            if (url.includes('/reports/profit')) {
-                // Profit page selectors
-                pnlEl = row.querySelector('.table__cell.profit_loss > span');
-                // Check if it has profit class (you mentioned _profit for profit)
-                isProfit = row.querySelector('.table__cell.profit_loss .amount--profit') !== null;
-            } else if (url.includes('/reports/statement')) {
-                // Statement page selectors
-                pnlEl = row.querySelector('.table__cell.amount .amount--profit') || 
-                       row.querySelector('.table__cell.amount .amount--loss');
-                isProfit = row.querySelector('.table__cell.amount .amount--profit') !== null;
-            }
-            
+            // Profit page selectors only
+            const pnlEl = row.querySelector('.table__cell.profit_loss > span');
+            const isProfit = row.querySelector('.table__cell.profit_loss .amount--profit') !== null;
+
             console.log(`Trade ${index}:`, {
                 pnlHTML: pnlEl ? pnlEl.innerHTML : 'not found',
                 isProfit: isProfit,
                 rowId: row.id
             });
-            
+
             if (pnlEl) {
                 const pnlText = extractTextFromHTML(pnlEl.innerHTML) || pnlEl.innerText.trim();
-                
+
                 const trade = {
                     pnl: pnlText,
                     isProfit: isProfit,
                     result: isProfit ? 'W' : 'L' // W for Win, L for Loss
                 };
-                
+
                 state.recentTrades.push(trade);
                 console.log('Added trade:', trade);
             }
@@ -177,9 +236,16 @@ function scrapeRecentTrades() {
             console.log('Error scraping trade row:', error);
         }
     });
-    
+
     console.log('Total trades found:', state.recentTrades.length);
-    
+
+    // Update timestamp and save to persistence if we got new data
+    if (state.recentTrades.length > 0) {
+        state.lastTradeDataFetch = Date.now();
+        state.backgroundDataValid = true;
+        saveDataToPersistence();
+    }
+
     // Update the performance panel
     updatePerformancePanel();
 }
@@ -188,7 +254,7 @@ function scrapeRecentTrades() {
 function updatePerformancePanel() {
     const perfContainer = document.querySelector('#panel-performance');
     if (!perfContainer) return;
-    
+
     // Calculate total profit from recent trades
     let totalProfit = 0;
     state.recentTrades.forEach(trade => {
@@ -197,27 +263,27 @@ function updatePerformancePanel() {
             totalProfit += trade.isProfit ? Math.abs(amount) : -Math.abs(amount);
         }
     });
-    
+
     // Generate W-L pattern from recent trades
     const tradePattern = state.recentTrades.map(trade => trade.result).join('-') || 'No data';
-    
+
     // Update the performance panel content
     const totalProfitEl = perfContainer.querySelector('.stat-row:first-of-type strong');
     const last5TradesEl = perfContainer.querySelector('.stat-row:last-of-type strong');
-    
+
     if (totalProfitEl && state.recentTrades.length > 0) {
         const profitColor = totalProfit >= 0 ? '#4bb543' : '#ff444f';
         const profitSign = totalProfit >= 0 ? '+' : '';
         totalProfitEl.innerHTML = `<span style="color: ${profitColor};">${profitSign}${totalProfit.toFixed(2)} USD</span>`;
     }
-    
+
     if (last5TradesEl && state.recentTrades.length > 0) {
         last5TradesEl.innerText = tradePattern;
     }
-    
+
     // Update win rate in Smart Insights panel
     updateSmartInsights();
-    
+
     console.log('Updated performance panel:', {
         totalProfit: totalProfit.toFixed(2),
         tradePattern: tradePattern
@@ -228,23 +294,23 @@ function updatePerformancePanel() {
 function updateSmartInsights() {
     const insightsContainer = document.querySelector('#panel-insights');
     if (!insightsContainer) return;
-    
+
     // Calculate win rate from recent trades
     let calculatedWinRate = "68%"; // Default fallback
-    
+
     if (state.recentTrades.length > 0) {
         const wins = state.recentTrades.filter(trade => trade.isProfit).length;
         const totalTrades = state.recentTrades.length;
         const winRatePercent = Math.round((wins / totalTrades) * 100);
         calculatedWinRate = `${winRatePercent}%`;
-        
+
         console.log('Calculated win rate:', {
             wins: wins,
             totalTrades: totalTrades,
             winRate: calculatedWinRate
         });
     }
-    
+
     // Update the win rate in the insights panel
     const winRateEl = insightsContainer.querySelector('.stat-row:first-of-type strong');
     if (winRateEl) {
@@ -256,10 +322,10 @@ function updateSmartInsights() {
         } else if (winRateNum < 65) {
             winRateColor = '#ffa500'; // Orange for average win rate
         }
-        
+
         winRateEl.innerHTML = `<span style="color: ${winRateColor};">${calculatedWinRate}</span>`;
     }
-    
+
     // Update the state for other functions to use
     state.winRate = calculatedWinRate;
 }
@@ -308,18 +374,18 @@ function updateDynamicPanels() {
     const posPanel = document.getElementById('panel-positions');
     const perfPanel = document.getElementById('panel-performance');
 
-    // Toggle Positions Panel
-    if (url.includes('/dtrader') || url.includes('/reports/positions')) {
-        if (posPanel) posPanel.style.display = 'block';
-    } else {
-        if (posPanel) posPanel.style.display = 'none';
-    }
+    // Hide Positions Panel completely - no longer needed
+    if (posPanel) posPanel.style.display = 'none';
 
-    // Toggle Performance Panel
-    if (url.includes('/reports/profit') || url.includes('/reports/statement')) {
-        if (perfPanel) perfPanel.style.display = 'block';
-    } else {
-        if (perfPanel) perfPanel.style.display = 'none';
+    // Show Performance Panel persistently when we have trade data (from background persistence)
+    if (perfPanel) {
+        if (state.backgroundDataValid && state.recentTrades.length > 0) {
+            perfPanel.style.display = 'block';
+            // Update the panel with current data
+            updatePerformancePanel();
+        } else {
+            perfPanel.style.display = 'none';
+        }
     }
 }
 
@@ -463,9 +529,9 @@ function injectInlineButtons() {
         // Check if it's a Sell button by text content
         if (btn.innerText.toLowerCase() !== 'sell') return;
         if (btn.parentElement.classList.contains('ai-button-container')) return;
-        
+
         console.log('Found Sell button:', btn.id, btn.innerText);
-        
+
         const container = document.createElement('div');
         container.className = 'ai-button-container';
         btn.parentNode.insertBefore(container, btn);
@@ -481,13 +547,13 @@ function injectInlineButtons() {
     const allButtons = document.querySelectorAll('button');
     allButtons.forEach(btn => {
         const buttonText = btn.innerText.toLowerCase();
-        if ((buttonText === 'close' || buttonText === 'sell') && 
-            btn.offsetWidth > 0 && 
+        if ((buttonText === 'close' || buttonText === 'sell') &&
+            btn.offsetWidth > 0 &&
             !btn.parentElement.classList.contains('ai-button-container') &&
             !btn.classList.contains('ai-advice-btn')) {
-            
+
             console.log('Found additional Close/Sell button:', btn.className, btn.innerText);
-            
+
             const container = document.createElement('div');
             container.className = 'ai-button-container';
             btn.parentNode.insertBefore(container, btn);
@@ -556,10 +622,20 @@ function openChatWithPrefill(actionType) {
 
 // Init
 function init() {
+    // Load any persisted data first
+    loadPersistedData();
+
     injectFloatingBubble();
+
+    // Main scraping interval (every 6 seconds)
     setInterval(() => {
         scrapeContext();
         injectInlineButtons();
-    }, 2000);
+    }, 6000); // 6 seconds
+
+    // Background data fetcher (every 30 seconds)
+    setInterval(() => {
+        backgroundDataFetcher();
+    }, 30000); // 30 seconds
 }
 setTimeout(init, 3000);
