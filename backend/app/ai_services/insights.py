@@ -21,8 +21,7 @@ from app.ai_services.analysis import (
 from app.prompts.insight_prompts import (
     INSIGHT_SYSTEM_PROMPT,
     INSIGHT_USER_TEMPLATE,
-    PATTERN_DESCRIPTIONS,
-    FALLBACK_INSIGHTS
+    PATTERN_DESCRIPTIONS
 )
 from app.ai_services.deriv_market import get_market_service
 
@@ -65,7 +64,7 @@ class InsightGenerator:
         """Lazy load the Claude client."""
         if self._client is None:
             if not self.settings.is_anthropic_configured():
-                logger.warning("Anthropic API key not configured. Using fallback insights.")
+                logger.warning("Anthropic API key not configured. AI insights will be unavailable.")
                 return None
             try:
                 import anthropic
@@ -148,8 +147,14 @@ class InsightGenerator:
             except Exception as e:
                 logger.error(f"Error generating AI insights: {e}")
 
-        # Fall back to non-AI insights
-        return self._fallback_response(statistics, patterns)
+        # Fallback removed - return basic stats response without AI insights
+        return InsightResponse(
+            summary=f"Analyzed {statistics.get('total_trades', 0)} trades.",
+            insights=[],
+            recommendations=["AI insights are currently unavailable. Please check configuration."],
+            statistics=statistics,
+            suggested_lesson=""
+        )
 
     async def _call_claude(
         self,
@@ -251,7 +256,13 @@ class InsightGenerator:
             )
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse Claude response: {e}")
-            return self._fallback_response(statistics, [])
+            return InsightResponse(
+                summary="Error parsing AI response.",
+                insights=[],
+                recommendations=[],
+                statistics=statistics,
+                suggested_lesson=""
+            )
 
     def _empty_response(self) -> InsightResponse:
         """Return response when no trades exist."""
@@ -267,82 +278,6 @@ class InsightGenerator:
             recommendations=["Log your first trade to begin tracking."],
             statistics={},
             suggested_lesson="Introduction to Trading: Key Concepts"
-        )
-
-    def _fallback_response(
-        self,
-        statistics: Dict[str, Any],
-        patterns: List[PatternDetectionResult]
-    ) -> InsightResponse:
-        """Generate fallback response without AI when API fails."""
-        insights = []
-        recommendations = []
-
-        # Generate basic insights from statistics
-        win_rate = statistics.get("win_rate", 0)
-        total_pl = statistics.get("total_profit_loss", 0)
-
-        if win_rate >= 60:
-            insights.append(TradingInsight(
-                type="strength",
-                message=FALLBACK_INSIGHTS["high_win_rate"].format(win_rate=win_rate),
-                priority="medium"
-            ))
-        elif win_rate < 40 and statistics.get("total_trades", 0) >= 5:
-            insights.append(TradingInsight(
-                type="weakness",
-                message=FALLBACK_INSIGHTS["low_win_rate"].format(win_rate=win_rate),
-                priority="high"
-            ))
-            recommendations.append("Review your entry criteria for trades")
-
-        if total_pl > 0:
-            insights.append(TradingInsight(
-                type="strength",
-                message=FALLBACK_INSIGHTS["profitable"],
-                priority="medium"
-            ))
-        elif total_pl < 0 and statistics.get("total_trades", 0) >= 3:
-            insights.append(TradingInsight(
-                type="observation",
-                message=FALLBACK_INSIGHTS["losing"],
-                priority="medium"
-            ))
-
-        # Add pattern-based insights
-        for pattern in patterns:
-            if pattern.detected:
-                is_negative = "REVENGE" in pattern.pattern.name or "OVER" in pattern.pattern.name or "RISK" in pattern.pattern.name
-                insights.append(TradingInsight(
-                    type="weakness" if is_negative else "strength",
-                    message=pattern.details,
-                    priority="high" if pattern.confidence > 0.7 else "medium"
-                ))
-
-                if is_negative:
-                    if "REVENGE" in pattern.pattern.name:
-                        recommendations.append("Take a 15-minute break after any loss before trading again")
-                    elif "OVER" in pattern.pattern.name:
-                        recommendations.append("Set a maximum number of trades per day and stick to it")
-                    elif "RISK" in pattern.pattern.name:
-                        recommendations.append("Review your position sizing and stop loss strategy")
-
-        # Determine suggested lesson
-        suggested_lesson = "Basic Risk Management: Never Risk More Than You Can Afford"
-        for pattern in patterns:
-            if pattern.detected and "REVENGE" in pattern.pattern.name:
-                suggested_lesson = "Managing Trading Emotions"
-                break
-            elif pattern.detected and "RISK" in pattern.pattern.name:
-                suggested_lesson = "Position Sizing Strategies for Consistent Returns"
-                break
-
-        return InsightResponse(
-            summary=f"Analyzed {statistics.get('total_trades', 0)} trades with {win_rate:.1f}% win rate.",
-            insights=insights,
-            recommendations=recommendations or ["Keep tracking your trades for more personalized insights."],
-            statistics=statistics,
-            suggested_lesson=suggested_lesson
         )
 
 

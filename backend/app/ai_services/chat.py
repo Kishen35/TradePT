@@ -18,6 +18,8 @@ from app.prompts.chat_prompts import (
     QUICK_RESPONSES
 )
 from app.ai_services.deriv_market import get_market_service
+from app.database.models.users import User
+from app.config.db import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +77,7 @@ class TradingChatBot:
         """Lazy load the Anthropic client."""
         if self._client is None:
             if not self.settings.is_anthropic_configured():
-                logger.warning("Anthropic API key not configured. Using fallback responses.")
+                logger.warning("Anthropic API key not configured. AI features will be unavailable.")
                 return None
             try:
                 import anthropic
@@ -113,12 +115,32 @@ class TradingChatBot:
 
         context_str = ""
         if user_context:
-            # Parse questionnaire preferences
-            experience_level = user_context.get("experience_level", "beginner")
-            trading_style = user_context.get("trading_style", "day_trader")
-            risk_behavior = user_context.get("risk_behavior", "conservative")
+            # Fetch user profile from DB to enhance context
+            db_experience = "beginner"
+            db_trading_style = "day_trader"
+            db_risk_behavior = "conservative"
+            db_asset_preference = ""
+
+            db = SessionLocal()
+            try:
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    db_experience = user.experience_level or "beginner"
+                    db_trading_style = user.trading_duration or "day_trader"
+                    db_risk_behavior = user.risk_tolerance or "conservative"
+                    db_asset_preference = user.asset_preference or ""
+            except Exception as e:
+                logger.error(f"Error fetching user profile: {e}")
+            finally:
+                db.close()
+
+            # Parse questionnaire preferences (Prioritize DB, fallback to frontend context)
+            experience_level = db_experience
+            trading_style = db_trading_style
+            risk_behavior = db_risk_behavior
+            preferred_assets = [db_asset_preference] if db_asset_preference else user_context.get("preferred_assets", [])
+            
             risk_per_trade = user_context.get("risk_per_trade", 2.0)
-            preferred_assets = user_context.get("preferred_assets", [])
 
             # Parse performance data
             skill_level = user_context.get("skill_level", experience_level)
@@ -205,28 +227,38 @@ class TradingChatBot:
             user_context=session.user_context or "No specific context available."
         )
 
+        # Determine constraints based on message type
+        message_type = user_context.get("message_type", "general")
+        max_tokens = 1024
+
+        if message_type in ["trading_action", "risk_management"]:
+            max_tokens = 175  # Approx 150 words constraint
+            system_prompt += "\n\nCRITICAL INSTRUCTION: Respond in 150 words or less. Be concise."
+
         # Try to get AI response
         client = self._get_client()
         if client:
             try:
                 response = await self._call_anthropic(
                     system_prompt=system_prompt,
-                    messages=session.get_messages_for_api()
+                    messages=session.get_messages_for_api(),
+                    max_tokens=max_tokens
                 )
                 session.add_message("assistant", response)
                 return response, session.session_id
             except Exception as e:
                 logger.error(f"Error in chat: {e}")
 
-        # Fallback response
-        fallback = self._get_fallback_response(message)
-        session.add_message("assistant", fallback)
-        return fallback, session.session_id
+        # Error response (Fallbacks removed)
+        error_msg = "I apologize, but I am unable to process your request at the moment. Please ensure the AI service is correctly configured."
+        session.add_message("assistant", error_msg)
+        return error_msg, session.session_id
 
     async def _call_anthropic(
         self,
         system_prompt: str,
-        messages: List[Dict[str, str]]
+        messages: List[Dict[str, str]],
+        max_tokens: int = 1024
     ) -> str:
         """Make API call to Anthropic Claude."""
         import asyncio
@@ -235,7 +267,7 @@ class TradingChatBot:
             client = self._get_client()
             response = client.messages.create(
                 model=self.settings.anthropic_model_name,
-                max_tokens=1024,
+                max_tokens=max_tokens,
                 system=system_prompt,
                 messages=messages
             )
@@ -274,37 +306,6 @@ class TradingChatBot:
             return QUICK_RESPONSES["off_topic"]
 
         return None
-
-    def _get_fallback_response(self, message: str) -> str:
-        """Generate a fallback response when AI is unavailable."""
-        message_lower = message.lower()
-
-        # Try to match common trading questions
-        if "stop loss" in message_lower:
-            return ("A stop loss is an order to close your position at a predetermined price level "
-                    "to limit potential losses. It's a crucial risk management tool that every trader should use.")
-
-        if "position size" in message_lower or "lot size" in message_lower:
-            return ("Position sizing determines how much of your capital to risk on each trade. "
-                    "A common rule is to never risk more than 1-2% of your account on a single trade.")
-
-        if "revenge trading" in message_lower:
-            return ("Revenge trading is making impulsive trades to recover losses quickly. "
-                    "It's dangerous because it bypasses your trading plan. Take a break after losses instead.")
-
-        if "win rate" in message_lower:
-            return ("Win rate is the percentage of your trades that are profitable. "
-                    "While important, it should be balanced with your risk-reward ratio. "
-                    "You can be profitable with a 40% win rate if your winners are larger than your losers.")
-
-        if "risk" in message_lower and "reward" in message_lower:
-            return ("Risk-reward ratio compares potential loss to potential gain. "
-                    "A 1:2 ratio means risking $1 to potentially make $2. "
-                    "Most successful traders aim for at least 1:2 or better.")
-
-        # Generic fallback
-        return ("I'm here to help with trading questions. I can explain concepts like risk management, "
-                "trading psychology, technical analysis, and more. What would you like to know?")
 
     def clear_session(self, session_id: str) -> bool:
         """
