@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Risk Profile</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .login-input {
+            width: 100%; background: #0e0e0e; border: 1px solid #323738; color: white;
+            padding: 10px; border-radius: 4px; outline: none; font-size: 12px;
+            box-sizing: border-box; margin-bottom: 10px; font-family: 'IBM Plex Sans', sans-serif;
+        }
+        label { display: block; font-size: 11px; color: #999; margin-bottom: 5px; font-weight: bold; }
+        body { margin: 0; padding: 0; width: 320px; height: 550px; overflow: hidden; background: #151717; }
+    </style>
+</head>
+<body>
+
+    <div id="ai-insights-popup" style="position: relative; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height: 100%; margin: 0; border: none; box-shadow: none;">
+        
+        <div class="popup-header">
+            <span>📊 Risk Setup</span>
+        </div>
+
+        <div class="popup-scroll-area">
+            
+            <form id="riskForm">
+                <div class="panel-section" style="margin-bottom: 15px;">
+                    <h4>1. Trading Experience</h4>
+                    <select class="login-input" style="margin-bottom: 0;">
+                        <option>Beginner (0-6 months)</option>
+                        <option>Intermediate (6m - 2y)</option>
+                        <option>Expert (2y+)</option>
+                    </select>
+                </div>
+
+                <div class="panel-section" style="margin-bottom: 15px;">
+                    <h4>2. Risk Appetite</h4>
+                    <select class="login-input" style="margin-bottom: 0;">
+                        <option>Conservative (Low Risk)</option>
+                        <option>Balanced (Medium Risk)</option>
+                        <option>Aggressive (High Risk)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="lesson-btn" style="width: 100%; padding: 10px; font-size: 13px;">COMPLETE SETUP</button>
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('riskForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert("Setup Selesai! AI sedia digunakan.");
+            window.close();
+        });
+    </script>
+</body>
+</html>
