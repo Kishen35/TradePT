@@ -32,6 +32,9 @@ function scrapeContext() {
 
     // Scrape Live Positions
     scrapeLivePositions();
+    
+    // Scrape Recent Trades (for performance panel)
+    scrapeRecentTrades();
 
     updateDynamicPanels();
 }
@@ -114,7 +117,109 @@ function scrapeLivePositions() {
     updatePositionsPanel();
 }
 
-// 1b. Helper function to extract clean text from HTML
+// 1d. Recent Trades Scraper (for profit/statement pages)
+function scrapeRecentTrades() {
+    state.recentTrades = []; // Reset trades array
+    
+    const url = window.location.href;
+    
+    // Only scrape on profit or statement pages
+    if (!url.includes('/reports/profit') && !url.includes('/reports/statement')) {
+        return;
+    }
+    
+    console.log('Scraping recent trades on:', url.includes('/reports/profit') ? 'profit page' : 'statement page');
+    
+    // Look for trade rows - they have IDs like dt_reports_contract_305945452408
+    const tradeRows = document.querySelectorAll('[id^="dt_reports_contract_"]');
+    
+    console.log('Found trade rows:', tradeRows.length);
+    
+    // Get last 5 trades (or fewer if less available)
+    const last5Trades = Array.from(tradeRows).slice(0, 5);
+    
+    last5Trades.forEach((row, index) => {
+        try {
+            let pnlEl = null;
+            let isProfit = false;
+            
+            if (url.includes('/reports/profit')) {
+                // Profit page selectors
+                pnlEl = row.querySelector('.table__cell.profit_loss > span');
+                // Check if it has profit class (you mentioned _profit for profit)
+                isProfit = row.querySelector('.table__cell.profit_loss .amount--profit') !== null;
+            } else if (url.includes('/reports/statement')) {
+                // Statement page selectors
+                pnlEl = row.querySelector('.table__cell.amount .amount--profit') || 
+                       row.querySelector('.table__cell.amount .amount--loss');
+                isProfit = row.querySelector('.table__cell.amount .amount--profit') !== null;
+            }
+            
+            console.log(`Trade ${index}:`, {
+                pnlHTML: pnlEl ? pnlEl.innerHTML : 'not found',
+                isProfit: isProfit,
+                rowId: row.id
+            });
+            
+            if (pnlEl) {
+                const pnlText = extractTextFromHTML(pnlEl.innerHTML) || pnlEl.innerText.trim();
+                
+                const trade = {
+                    pnl: pnlText,
+                    isProfit: isProfit,
+                    result: isProfit ? 'W' : 'L' // W for Win, L for Loss
+                };
+                
+                state.recentTrades.push(trade);
+                console.log('Added trade:', trade);
+            }
+        } catch (error) {
+            console.log('Error scraping trade row:', error);
+        }
+    });
+    
+    console.log('Total trades found:', state.recentTrades.length);
+    
+    // Update the performance panel
+    updatePerformancePanel();
+}
+
+// 1e. Update Performance Panel with Live Data
+function updatePerformancePanel() {
+    const perfContainer = document.querySelector('#panel-performance');
+    if (!perfContainer) return;
+    
+    // Calculate total profit from recent trades
+    let totalProfit = 0;
+    state.recentTrades.forEach(trade => {
+        const amount = parseFloat(trade.pnl.replace(/[^\d.-]/g, ''));
+        if (!isNaN(amount)) {
+            totalProfit += trade.isProfit ? Math.abs(amount) : -Math.abs(amount);
+        }
+    });
+    
+    // Generate W-L pattern from recent trades
+    const tradePattern = state.recentTrades.map(trade => trade.result).join('-') || 'No data';
+    
+    // Update the performance panel content
+    const totalProfitEl = perfContainer.querySelector('.stat-row:first-of-type strong');
+    const last5TradesEl = perfContainer.querySelector('.stat-row:last-of-type strong');
+    
+    if (totalProfitEl && state.recentTrades.length > 0) {
+        const profitColor = totalProfit >= 0 ? '#4bb543' : '#ff444f';
+        const profitSign = totalProfit >= 0 ? '+' : '';
+        totalProfitEl.innerHTML = `<span style="color: ${profitColor};">${profitSign}${totalProfit.toFixed(2)} USD</span>`;
+    }
+    
+    if (last5TradesEl && state.recentTrades.length > 0) {
+        last5TradesEl.innerText = tradePattern;
+    }
+    
+    console.log('Updated performance panel:', {
+        totalProfit: totalProfit.toFixed(2),
+        tradePattern: tradePattern
+    });
+}
 function extractTextFromHTML(html) {
     if (!html) return '';
     // Create a temporary div to parse HTML and extract text
