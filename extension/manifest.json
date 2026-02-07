@@ -3,11 +3,18 @@
   "name": "Deriv AI Trading Tutor",
   "version": "1.0",
   "description": "Personalized AI agent for trading education on Deriv DTrader.",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "https://your-backend-domain.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["https://app.deriv.com/*"],
-      "js": ["content.js"],
+      "js": ["ai-integration.js", "content.js"],
       "css": ["styles.css"]
     }
   ],

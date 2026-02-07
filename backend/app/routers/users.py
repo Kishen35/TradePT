@@ -5,7 +5,6 @@ from app.database.models import users as UserModels
 from app.database.schemas import users as UserSchemas
 from app.config.db import engine
 from app.config.db import get_db
-from app.config.deriv import deriv_api, deriv_api_token
 
 router = APIRouter(prefix="/users", tags=["users"])
 

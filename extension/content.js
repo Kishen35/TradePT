@@ -4,6 +4,7 @@ console.log("Deriv AI Trading Tutor: Ultimate Agent Loaded.");
 const state = {
   balance: "0.00",
   currentSymbol: "",
+  stakeAmount: "",
   winRate: "68%",
   positions: [],
   recentTrades: [],
@@ -56,13 +57,6 @@ class Chatbox {
                         Hello! I've analyzed your current view. How can I help you with your strategy today?
                     </div>
                 </div>
-                
-                <!-- 5. Interactive Lesson Block (appears in chat flow) -->
-                <div class="lesson-block">
-                    <strong>Recommended Lesson</strong>
-                    <p>Mastering Multipliers & Risk Management</p>
-                    <button class="lesson-btn">Start 2-min Lesson</button>
-                </div>
             </div>
 
             <div class="chat-input-area">
@@ -92,7 +86,7 @@ class Chatbox {
     });
   }
 
-  sendMessage() {
+  async sendMessage() {
     const input = document.getElementById("user-input");
     const text = input.value.trim();
     if (!text) return;
@@ -100,23 +94,77 @@ class Chatbox {
     this.addMessage("user", text);
     input.value = "";
 
-    setTimeout(() => {
+    // Show typing indicator
+    this.addMessage("ai", "🤔 Analyzing your trading data...");
+
+    try {
+      // Initialize AI integration if not already done
+      if (!window.aiIntegration) {
+        window.aiIntegration = new AIIntegration();
+      }
+
+      // Categorize message for better context
+      const messageType = window.aiIntegration.categorizeMessage(text);
+
+      // Get AI response with full trading context
+      const aiResponse = await window.aiIntegration.sendMessageToAI(
+        text,
+        messageType,
+      );
+
+      // Remove typing indicator and add real response
+      const chatMessages = document.getElementById("chat-messages");
+      const lastMessage = chatMessages.lastElementChild;
+      if (lastMessage && lastMessage.textContent.includes("Analyzing")) {
+        lastMessage.remove();
+      }
+
+      this.addMessage("ai", aiResponse);
+    } catch (error) {
+      console.error("AI chat error:", error);
+      // Remove typing indicator
+      const chatMessages = document.getElementById("chat-messages");
+      const lastMessage = chatMessages.lastElementChild;
+      if (lastMessage && lastMessage.textContent.includes("Analyzing")) {
+        lastMessage.remove();
+      }
+
+      // Error message (Fallback removed)
       this.addMessage(
         "ai",
-        "I've checked your " +
-          (state.currentSymbol || "current market") +
-          " data. Given your balance of " +
-          state.balance +
-          ", I recommend sticking to a 1:2 risk-to-reward ratio.",
+        "I apologize, but I am unable to connect to the AI service at the moment. Please check your connection or configuration.",
       );
-    }, 1000);
+    }
+  }
+
+  formatMessage(text) {
+    if (!text) return "";
+
+    // 1. Escape HTML
+    let formatted = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+    // 2. Bold (**text**)
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+    // 3. Italics (*text*)
+    formatted = formatted.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+    // 4. Newlines
+    formatted = formatted.replace(/\n/g, "<br>");
+
+    return formatted;
   }
 
   addMessage(sender, text) {
     const chatMessages = document.getElementById("chat-messages");
     const msg = document.createElement("div");
     msg.className = `message ${sender}`;
-    msg.innerText = text;
+    msg.innerHTML = this.formatMessage(text); // Use innerHTML with formatted text
     chatMessages.appendChild(msg);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
@@ -227,32 +275,152 @@ class Chatbox {
   }
 
   // 5. Decision Overlay
-  showDecisionOverlay(type) {
+  async showDecisionOverlay(type) {
     let overlay = document.getElementById("ai-decision-overlay");
     if (!overlay) {
       overlay = document.createElement("div");
       overlay.id = "ai-decision-overlay";
       document.body.appendChild(overlay);
     }
+
+    // Show loading state first
     overlay.innerHTML = `
         <div class="overlay-content">
             <div class="overlay-header"><span>AI Trade Assistant</span><button onclick="document.getElementById('ai-decision-overlay').style.display='none'">×</button></div>
             <div class="overlay-body">
-                <div class="advice-status good">Safe to Trade</div>
-                <p>Market conditions are stable. Risk is within your profile.</p>
-                <div class="advice-details"><div><strong>Balance:</strong> ${state.balance}</div><div><strong>Risk:</strong> Low</div></div>
+                <div class="advice-status loading">🤔 Analyzing your trade...</div>
+                <p>Checking market conditions and your trading context...</p>
+                <div class="advice-details">
+                    <div><strong>Balance:</strong> ${state.balance}</div>
+                    <div><strong>Symbol:</strong> ${state.currentSymbol || "Not selected"}</div>
+                    <div><strong>Win Rate:</strong> ${state.winRate}</div>
+                </div>
             </div>
             <div class="overlay-footer">
-                <button onclick="document.getElementById('ai-decision-overlay').style.display='none'">Got it</button>
-                <button id="ask-ai-more-btn" style="background: #242828; margin-left: 10px;">Ask AI More</button>
+                <button onclick="document.getElementById('ai-decision-overlay').style.display='none'">Cancel</button>
             </div>
         </div>
     `;
     overlay.style.display = "flex";
-    document.getElementById("ask-ai-more-btn").onclick = () => {
-      overlay.style.display = "none";
-      this.openChatWithPrefill(type);
-    };
+
+    try {
+      // Initialize AI integration if not already done
+      if (!window.aiIntegration) {
+        window.aiIntegration = new AIIntegration();
+      }
+
+      // Generate contextual AI prompt based on action type
+      let aiPrompt = "";
+      if (type === "close" && state.currentSymbol) {
+        aiPrompt = `Should I close my current position? I have ${state.positions.length} open positions and my current balance is ${state.balance}. My win rate is ${state.winRate}.`;
+      } else if (type === "purchase" && state.currentSymbol) {
+        aiPrompt = `Is now a good time to buy ${state.currentSymbol} with a stake of ${state.stakeAmount}? My current balance is ${state.balance} and my win rate is ${state.winRate}. What's your analysis?`;
+      } else {
+        aiPrompt = `What's your advice on my current trading situation? Balance: ${state.balance}, Win Rate: ${state.winRate}, Stake Amount: ${state.stakeAmount || "Not set"}`;
+      }
+
+      // Get AI analysis
+      const aiResponse = await window.aiIntegration.sendMessageToAI(
+        aiPrompt,
+        type === "purchase" ? "trading_action" : "risk_management",
+      );
+
+      // Determine advice status based on AI response
+      const adviceStatus = this.determineAdviceStatus(aiResponse, type);
+
+      // Update overlay with AI analysis
+      overlay.innerHTML = `
+            <div class="overlay-content">
+                <div class="overlay-header"><span>AI Trade Assistant</span><button onclick="document.getElementById('ai-decision-overlay').style.display='none'">×</button></div>
+                <div class="overlay-body">
+                    <div class="advice-status ${adviceStatus.class}">${adviceStatus.icon} ${adviceStatus.text}</div>
+                    <p class="ai-analysis">${this.formatMessage(aiResponse)}</p>
+                    <div class="advice-details">
+                        <div><strong>Balance:</strong> ${state.balance}</div>
+                        <div><strong>Symbol:</strong> ${state.currentSymbol || "Not selected"}</div>
+                        <div><strong>Win Rate:</strong> ${state.winRate}</div>
+                        ${state.positions.length > 0 ? `<div><strong>Open Positions:</strong> ${state.positions.length}</div>` : ""}
+                    </div>
+                </div>
+                <div class="overlay-footer">
+                    <button onclick="document.getElementById('ai-decision-overlay').style.display='none'">Got it</button>
+                    <button id="ask-ai-more-btn" style="background: #242828; margin-left: 10px;">Ask AI More</button>
+                </div>
+            </div>
+        `;
+
+      // Set up "Ask AI More" button
+      document.getElementById("ask-ai-more-btn").onclick = () => {
+        overlay.style.display = "none";
+        this.openChatWithPrefill(type);
+      };
+    } catch (error) {
+      console.error("AI analysis failed:", error);
+
+      // Error state (Fallback removed)
+      overlay.innerHTML = `
+            <div class="overlay-content">
+                <div class="overlay-header"><span>AI Trade Assistant</span><button onclick="document.getElementById('ai-decision-overlay').style.display='none'">×</button></div>
+                <div class="overlay-body">
+                    <div class="advice-status warning">⚠️ Service Unavailable</div>
+                    <p>Unable to generate AI analysis at this time. Please check your configuration.</p>
+                </div>
+                <div class="overlay-footer">
+                    <button onclick="document.getElementById('ai-decision-overlay').style.display='none'">Close</button>
+                </div>
+            </div>
+        `;
+    }
+  }
+
+  // Helper function to determine advice status from AI response
+  determineAdviceStatus(aiResponse, type) {
+    const response = aiResponse.toLowerCase();
+
+    // Look for positive/negative indicators in AI response
+    const positiveWords = [
+      "good",
+      "safe",
+      "recommend",
+      "favorable",
+      "positive",
+      "go ahead",
+      "yes",
+    ];
+    const negativeWords = [
+      "avoid",
+      "risky",
+      "dangerous",
+      "not recommended",
+      "wait",
+      "no",
+      "caution",
+    ];
+    const cautionWords = [
+      "careful",
+      "consider",
+      "monitor",
+      "watch",
+      "moderate",
+    ];
+
+    const hasPositive = positiveWords.some((word) => response.includes(word));
+    const hasNegative = negativeWords.some((word) => response.includes(word));
+    const hasCaution = cautionWords.some((word) => response.includes(word));
+
+    if (hasNegative) {
+      return { class: "warning", icon: "⚠️", text: "Exercise Caution" };
+    } else if (hasCaution) {
+      return { class: "neutral", icon: "🤔", text: "Consider Carefully" };
+    } else if (hasPositive) {
+      return {
+        class: "good",
+        icon: "✅",
+        text: type === "purchase" ? "Good to Trade" : "Safe to Close",
+      };
+    } else {
+      return { class: "neutral", icon: "💡", text: "Review Analysis" };
+    }
   }
 
   // 6. Open chat with contextual prefilled message
@@ -267,7 +435,7 @@ class Chatbox {
     // Generate contextual message based on action type and current data
     let prefilledMessage = "";
     if (actionType === "close" && state.currentSymbol) {
-      prefilledMessage = `Should I close my current ${state.currentSymbol} position?`;
+      prefilledMessage = `Should I close my current position?`;
     } else if (actionType === "purchase" && state.currentSymbol) {
       prefilledMessage = `Is now a good time to buy ${state.currentSymbol}?`;
     } else {
@@ -308,6 +476,12 @@ class Scraper {
       const symbolHTML = symbolEl.innerHTML;
       state.currentSymbol =
         extractTextFromHTML(symbolHTML) || symbolEl.innerText.trim();
+    }
+
+    // Stake Amount
+    const stakeInput = document.querySelector("#dt_amount_input");
+    if (stakeInput) {
+      state.stakeAmount = stakeInput.value;
     }
 
     // Scrape Live Positions
@@ -576,7 +750,7 @@ class Updater {
   }
 
   // 1f. Update Smart Insights Panel with Dynamic Win Rate
-  updateSmartInsights() {
+  async updateSmartInsights() {
     const insightsContainer = document.querySelector("#panel-insights");
     if (!insightsContainer) return;
 
@@ -596,6 +770,9 @@ class Updater {
       });
     }
 
+    // Update state
+    state.winRate = calculatedWinRate;
+
     // Update the win rate in the insights panel
     const winRateEl = insightsContainer.querySelector(
       ".stat-row:first-of-type strong",
@@ -605,16 +782,80 @@ class Updater {
       const winRateNum = parseInt(calculatedWinRate);
       let winRateColor = "#4bb543"; // Green for good win rate
       if (winRateNum < 50) {
-        winRateColor = "#ff444f"; // Red for poor win rate
+        winRateColor = "#ff4757"; // Red for poor win rate
       } else if (winRateNum < 65) {
-        winRateColor = "#ffa500"; // Orange for average win rate
+        winRateColor = "#ffa502"; // Orange for average win rate
       }
 
-      winRateEl.innerHTML = `<span style="color: ${winRateColor};">${calculatedWinRate}</span>`;
+      winRateEl.textContent = calculatedWinRate;
+      winRateEl.style.color = winRateColor;
     }
 
-    // Update the state for other functions to use
-    state.winRate = calculatedWinRate;
+    // Try to get AI insights if available
+    try {
+      if (!window.aiIntegration) {
+        window.aiIntegration = new AIIntegration();
+      }
+
+      const insights = await window.aiIntegration.getTradingInsights();
+
+      if (insights && insights.insights.length > 0) {
+        // Update insights panel with AI-generated insights
+        this.updateInsightsPanelWithAI(insights);
+      }
+    } catch (error) {
+      console.log("Could not fetch AI insights, using fallback:", error);
+      // Continue with basic insights
+    }
+  }
+
+  // Update insights panel with AI-generated insights
+  updateInsightsPanelWithAI(insights) {
+    const insightsContainer = document.querySelector("#panel-insights");
+    if (!insightsContainer) return;
+
+    // Find or create insights list
+    let insightsList = insightsContainer.querySelector(".ai-insights-list");
+    if (!insightsList) {
+      insightsList = document.createElement("div");
+      insightsList.className = "ai-insights-list";
+      insightsContainer.appendChild(insightsList);
+    }
+
+    // Clear existing insights
+    insightsList.innerHTML = "";
+
+    // Add top 3 insights
+    const topInsights = insights.insights.slice(0, 3);
+    topInsights.forEach((insight) => {
+      const insightEl = document.createElement("div");
+      insightEl.className = `insight-item ${insight.priority}`;
+
+      const icon =
+        insight.type === "strength"
+          ? "✅"
+          : insight.type === "weakness"
+            ? "⚠️"
+            : "💡";
+
+      insightEl.innerHTML = `
+            <span class="insight-icon">${icon}</span>
+            <span class="insight-text">${insight.message}</span>
+        `;
+
+      insightsList.appendChild(insightEl);
+    });
+
+    // Add lesson suggestion if available
+    if (insights.suggested_lesson) {
+      const lessonEl = document.createElement("div");
+      lessonEl.className = "suggested-lesson";
+      lessonEl.innerHTML = `
+            <strong>📚 Suggested Lesson:</strong>
+            <span>${insights.suggested_lesson}</span>
+        `;
+      insightsList.appendChild(lessonEl);
+    }
   }
 
   // 1c. Update Positions Panel with Live Data
