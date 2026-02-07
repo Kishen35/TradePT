@@ -1,4 +1,4 @@
-ocument.getElementById("signupForm").addEventListener("submit", (e) => {
+document.getElementById("signupForm").addEventListener("submit", (e) => {
   e.preventDefault();
   if (
     document.getElementById("p1").value !== document.getElementById("p2").value
