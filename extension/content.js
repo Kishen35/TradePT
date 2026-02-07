@@ -9,15 +9,149 @@ const state = {
     recentTrades: []
 };
 
-// 1. Context Scraper
+// 1. Enhanced Context Scraper with Live Data (using innerHTML)
 function scrapeContext() {
-    const balanceEl = document.querySelector('.acc-info__balance') || document.querySelector('#dt_core_account-info_acc-info');
-    if (balanceEl) state.balance = balanceEl.innerText.trim();
+    // Account Balance - Multiple selectors for reliability
+    const balanceEl = document.querySelector('#dt_core_account-info_acc-info') ||
+        document.querySelector('.acc-info__balance');
+    if (balanceEl) {
+        // Use innerHTML to capture nested elements, then extract text
+        const balanceHTML = balanceEl.innerHTML;
+        state.balance = balanceEl.innerText.trim() || extractTextFromHTML(balanceHTML);
+    }
 
-    const symbolEl = document.querySelector('.cq-symbol-select-btn .cq-symbol-name');
-    if (symbolEl) state.currentSymbol = symbolEl.innerText.trim();
-    
+    // Current Trading Symbol - Enhanced selectors with innerHTML
+    const symbolEl = document.querySelector('.cq-symbol-select-btn .cq-symbol') ||
+        document.querySelector('.cq-symbol-info .cq-symbol') ||
+        document.querySelector('[data-testid="dt_symbol_info_name"]') ||
+        document.querySelector('.cq-symbol-select-btn .cq-symbol-name');
+    if (symbolEl) {
+        const symbolHTML = symbolEl.innerHTML;
+        state.currentSymbol = extractTextFromHTML(symbolHTML) || symbolEl.innerText.trim();
+    }
+
+    // Scrape Live Positions
+    scrapeLivePositions();
+
     updateDynamicPanels();
+}
+
+// 1a. Live Position Scraper (using correct Deriv selectors)
+function scrapeLivePositions() {
+    state.positions = []; // Reset positions array
+
+    // Use the specific selector for position symbols
+    const symbolElements = document.querySelectorAll("#dc-contract_card_underlying_label > span");
+
+    console.log('Found symbol elements:', symbolElements.length);
+
+    if (symbolElements.length === 0) {
+        console.log('No positions found with #dc-contract_card_underlying_label > span selector');
+        // Try alternative approaches
+        const contractCards = document.querySelectorAll('.dc-contract-card');
+        console.log('Found contract cards as fallback:', contractCards.length);
+    }
+
+    symbolElements.forEach((symbolEl, index) => {
+        try {
+            // Get the symbol from the specific selector
+            const symbol = extractTextFromHTML(symbolEl.innerHTML) || symbolEl.innerText.trim();
+
+            // Find the parent contract card to get P&L and other data
+            const contractCard = symbolEl.closest('.dc-contract-card');
+
+            if (contractCard) {
+                // Look for P&L using the correct profit/loss selectors
+                // Try profit selector first
+                let pnlEl = contractCard.querySelector('.dc-contract-card-item__total-profit-loss .dc-contract-card-item__body--profit > span');
+                let isProfit = true;
+
+                // If no profit found, try loss selector
+                if (!pnlEl) {
+                    pnlEl = contractCard.querySelector('.dc-contract-card-item__total-profit-loss .dc-contract-card-item__body--loss > span');
+                    isProfit = false;
+                }
+
+                // Fallback to generic selectors if specific ones don't work
+                if (!pnlEl) {
+                    pnlEl = contractCard.querySelector('.dc-contract-card__profit-loss') ||
+                        contractCard.querySelector('[class*="profit"]') ||
+                        contractCard.querySelector('[class*="pnl"]');
+                }
+
+                const typeEl = contractCard.querySelector('.dc-contract-card__type');
+
+                console.log(`Position ${index}:`, {
+                    symbol: symbol,
+                    pnlHTML: pnlEl ? pnlEl.innerHTML : 'not found',
+                    isProfit: isProfit,
+                    typeHTML: typeEl ? typeEl.innerHTML : 'not found'
+                });
+
+                if (symbol && pnlEl) {
+                    const pnlText = extractTextFromHTML(pnlEl.innerHTML) || pnlEl.innerText.trim();
+
+                    const position = {
+                        symbol: symbol,
+                        pnl: pnlText,
+                        type: typeEl ? (extractTextFromHTML(typeEl.innerHTML) || typeEl.innerText.trim()) : 'Unknown',
+                        isProfit: isProfit
+                    };
+                    state.positions.push(position);
+                    console.log('Added position:', position);
+                }
+            } else {
+                console.log(`No parent contract card found for symbol: ${symbol}`);
+            }
+        } catch (error) {
+            console.log('Error scraping position:', error);
+        }
+    });
+
+    console.log('Total positions found:', state.positions.length);
+
+    // Update the positions panel with live data
+    updatePositionsPanel();
+}
+
+// 1b. Helper function to extract clean text from HTML
+function extractTextFromHTML(html) {
+    if (!html) return '';
+    // Create a temporary div to parse HTML and extract text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    return tempDiv.innerText.trim();
+}
+
+// 1c. Update Positions Panel with Live Data
+function updatePositionsPanel() {
+    const positionsContainer = document.querySelector('#panel-positions');
+    if (!positionsContainer) return;
+
+    // Find the content area (skip the h4 header)
+    const existingItems = positionsContainer.querySelectorAll('.pos-item');
+    existingItems.forEach(item => item.remove());
+
+    if (state.positions.length === 0) {
+        // Show placeholder if no positions found
+        const placeholder = document.createElement('div');
+        placeholder.className = 'pos-item';
+        placeholder.innerHTML = '<span style="color: #999;">No open positions detected</span>';
+        positionsContainer.appendChild(placeholder);
+        return;
+    }
+
+    // Add live positions
+    state.positions.forEach(position => {
+        const posItem = document.createElement('div');
+        posItem.className = 'pos-item';
+
+        // Use the isProfit flag we set during scraping for accurate color coding
+        const pnlColor = position.isProfit ? '#4bb543' : '#ff444f';
+
+        posItem.innerHTML = `${position.symbol}: <span style="color: ${pnlColor};">${position.pnl}</span>`;
+        positionsContainer.appendChild(posItem);
+    });
 }
 
 // 2. Dynamic Panel Logic
@@ -116,9 +250,9 @@ function injectFloatingBubble() {
     };
 
     document.getElementById('send-msg').onclick = sendMessage;
-    document.getElementById('user-input').onkeypress = (e) => {
+    document.getElementById('user-input').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') sendMessage();
-    };
+    });
 }
 
 function sendMessage() {
@@ -200,9 +334,32 @@ function showDecisionOverlay(type) {
     overlay.style.display = 'flex';
     document.getElementById('ask-ai-more-btn').onclick = () => {
         overlay.style.display = 'none';
-        const trigger = document.getElementById('ai-bubble-trigger');
-        if (document.getElementById('ai-insights-popup').style.display === 'none') trigger.click();
+        openChatWithPrefill(type);
     };
+}
+
+// 6. Open chat with contextual prefilled message
+function openChatWithPrefill(actionType) {
+    const trigger = document.getElementById('ai-bubble-trigger');
+    const popup = document.getElementById('ai-insights-popup');
+    const input = document.getElementById('user-input');
+
+    // Open chat if closed
+    if (popup.style.display === 'none') trigger.click();
+
+    // Generate contextual message based on action type and current data
+    let prefilledMessage = '';
+    if (actionType === 'close' && state.currentSymbol) {
+        prefilledMessage = `Should I close my current ${state.currentSymbol} position?`;
+    } else if (actionType === 'purchase' && state.currentSymbol) {
+        prefilledMessage = `Is now a good time to buy ${state.currentSymbol}?`;
+    } else {
+        prefilledMessage = `What's your advice on my current trading situation?`;
+    }
+
+    // Prefill the input and focus
+    input.value = prefilledMessage;
+    input.focus();
 }
 
 // Init
