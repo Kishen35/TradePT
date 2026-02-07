@@ -215,10 +215,53 @@ function updatePerformancePanel() {
         last5TradesEl.innerText = tradePattern;
     }
     
+    // Update win rate in Smart Insights panel
+    updateSmartInsights();
+    
     console.log('Updated performance panel:', {
         totalProfit: totalProfit.toFixed(2),
         tradePattern: tradePattern
     });
+}
+
+// 1f. Update Smart Insights Panel with Dynamic Win Rate
+function updateSmartInsights() {
+    const insightsContainer = document.querySelector('#panel-insights');
+    if (!insightsContainer) return;
+    
+    // Calculate win rate from recent trades
+    let calculatedWinRate = "68%"; // Default fallback
+    
+    if (state.recentTrades.length > 0) {
+        const wins = state.recentTrades.filter(trade => trade.isProfit).length;
+        const totalTrades = state.recentTrades.length;
+        const winRatePercent = Math.round((wins / totalTrades) * 100);
+        calculatedWinRate = `${winRatePercent}%`;
+        
+        console.log('Calculated win rate:', {
+            wins: wins,
+            totalTrades: totalTrades,
+            winRate: calculatedWinRate
+        });
+    }
+    
+    // Update the win rate in the insights panel
+    const winRateEl = insightsContainer.querySelector('.stat-row:first-of-type strong');
+    if (winRateEl) {
+        // Color code the win rate
+        const winRateNum = parseInt(calculatedWinRate);
+        let winRateColor = '#4bb543'; // Green for good win rate
+        if (winRateNum < 50) {
+            winRateColor = '#ff444f'; // Red for poor win rate
+        } else if (winRateNum < 65) {
+            winRateColor = '#ffa500'; // Orange for average win rate
+        }
+        
+        winRateEl.innerHTML = `<span style="color: ${winRateColor};">${calculatedWinRate}</span>`;
+    }
+    
+    // Update the state for other functions to use
+    state.winRate = calculatedWinRate;
 }
 function extractTextFromHTML(html) {
     if (!html) return '';
