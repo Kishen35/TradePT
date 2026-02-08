@@ -432,7 +432,7 @@ class Chatbox {
     // Open chat if closed
     if (popup.style.display === "none") trigger.click();
 
-    // Generate contextual message based on action type, analysis result, and current data
+    // Generate contextual message based on action type and current data
     let prefilledMessage = "";
     if (actionType === "close" && state.currentSymbol) {
       prefilledMessage = `Should I close my current position?`;

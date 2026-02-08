@@ -152,6 +152,17 @@ class TradingChatBot:
             # Market context placeholder (will be populated by deriv_market service)
             market_context = user_context.get("market_context", "Market data not available")
 
+            # Format recent trades for context
+            recent_trades_data = user_context.get("recent_trades", [])
+            recent_trades_str = "No recent trades available."
+            if recent_trades_data:
+                trade_lines = []
+                for t in recent_trades_data[:5]:  # Limit to last 5
+                    result = "Win" if t.get("isProfit") else "Loss"
+                    pnl = t.get("pnl", "0.00")
+                    trade_lines.append(f"- {result} ({pnl})")
+                recent_trades_str = "\n".join(trade_lines)
+
             context_str = CONTEXT_BUILDING_TEMPLATE.format(
                 # Questionnaire preferences
                 experience_level=experience_level,
@@ -165,6 +176,8 @@ class TradingChatBot:
                 trend=trend,
                 win_rate=win_rate,
                 patterns=", ".join(patterns) if patterns else "none detected",
+                # Recent Trades
+                recent_trades=recent_trades_str,
                 # Market context
                 market_context=market_context
             )
@@ -206,6 +219,25 @@ class TradingChatBot:
                 preferred_assets = user_context.get("preferred_assets", [])
                 market_context = await market_service.get_market_context_safe(preferred_assets)
                 user_context["market_context"] = market_context
+
+                # Fetch recent trades from backend API for accuracy
+                api_trades = await market_service.get_recent_trades(limit=5)
+                if api_trades:
+                    formatted_trades = []
+                    for t in api_trades:
+                        # Profit might be in 'profit' or calculated
+                        profit = float(t.get("profit") or (float(t.get("sell_price", 0)) - float(t.get("buy_price", 0))))
+                        is_profit = profit >= 0
+                        currency = t.get("currency", "USD") # Default to USD if missing
+                        
+                        formatted_trades.append({
+                            "isProfit": is_profit,
+                            "pnl": f"{profit:+.2f} {currency}"
+                        })
+                    
+                    # Override frontend data with verified API data
+                    user_context["recent_trades"] = formatted_trades
+
             except Exception as e:
                 logger.warning(f"Could not fetch market context: {e}")
                 user_context["market_context"] = "Market data temporarily unavailable"
