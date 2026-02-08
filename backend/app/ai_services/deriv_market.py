@@ -176,6 +176,39 @@ class DerivMarketService:
 
         return None
 
+    async def get_recent_trades(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """
+        Get recent completed trades (profit table).
+
+        Args:
+            limit: Number of trades to return
+
+        Returns:
+            List of trade dictionaries
+        """
+        api = self._get_api()
+        if not api:
+            return []
+
+        try:
+            if not await self._ensure_authorized():
+                return []
+
+            # API call for profit table
+            # "description": 1 gets full details, "sort": "DESC" puts newest first usually, 
+            # but standard API might just return list. We'll slice it.
+            response = await api.profit_table({"limit": limit, "description": 1})
+            
+            if response and "profit_table" in response:
+                transactions = response["profit_table"].get("transactions", [])
+                # Ensure they are sorted by purchase_time descending if API doesn't guarantee
+                # transactions.sort(key=lambda x: x.get('purchase_time', 0), reverse=True)
+                return transactions[:limit]
+        except Exception as e:
+            logger.error(f"Failed to fetch profit table: {e}")
+        
+        return []
+
     async def get_market_context(self, preferred_assets: List[str] = None) -> str:
         """
         Build a market context string for AI prompts.

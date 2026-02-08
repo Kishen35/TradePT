@@ -59,6 +59,9 @@ CONTEXT_BUILDING_TEMPLATE = """User Trading Profile:
 - Win Rate: {win_rate}%
 - Recent Patterns Detected: {patterns}
 
+## Recent Trades
+{recent_trades}
+
 ## Current Market Context
 {market_context}
 
