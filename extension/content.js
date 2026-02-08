@@ -946,6 +946,14 @@ const chatbot = new Chatbox();
 const scraper = new Scraper();
 const updater = new Updater();
 
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === "user_session_data") {
+    // To handle storing user session data from background script
+    console.log("User Session Data Received:", message.payload);
+    localStorage.setItem("user_session_data", JSON.stringify(message.payload));
+  }
+});
+
 // Init
 function init() {
   // Load any persisted data first

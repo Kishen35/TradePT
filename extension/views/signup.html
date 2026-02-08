@@ -58,14 +58,63 @@
                 <h4>Create Account</h4>
 
                 <form id="signupForm">
+                    <label>NAME</label>
+                    <input type="text" class="login-input" name="name" required>
+
                     <label>EMAIL ADDRESS</label>
-                    <input type="email" class="login-input" required>
+                    <input type="email" class="login-input" name="email" required>
 
                     <label>PASSWORD</label>
-                    <input type="password" class="login-input" id="p1" required>
+                    <input type="password" class="login-input" name="password" id="p1" required>
 
                     <label>CONFIRM PASSWORD</label>
-                    <input type="password" class="login-input" id="p2" required>
+                    <input type="password" class="login-input" name="confirm_password" id="p2" required>
+
+                    <div style="margin-bottom: 15px; margin-top: 5px;">
+                        <h4>1. Trading Experience</h4>
+                        <select class="login-input" style="margin-bottom: 0;" name="experience_level">
+                            <option value="beginner">Beginner (0-6 months)</option>
+                            <option value="intermediate">Intermediate (6m - 2y)</option>
+                            <option value="advanced">Advanced (2y+)</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <h4>2. Risk Tolerance</h4>
+                        <select class="login-input" style="margin-bottom: 0;" name="risk_tolerance">
+                            <option value="cut loss">Cut Loss (Low Risk)</option>
+                            <option value="wait see">Wait See (Medium Risk)</option>
+                            <option value="layering">Layering (High Risk)</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <h4>3. Trading Duration</h4>
+                        <select class="login-input" style="margin-bottom: 0;" name="trading_duration">
+                            <option value="scalper">Scalper</option>
+                            <option value="day trader">Day Trader</option>
+                            <option value="swing trader">Swing Trader</option>
+                            <option value="long-term investor">Long-Term Investor</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <h4>4. Capital Allocation</h4>
+                        <select class="login-input" style="margin-bottom: 0;" name="capital_allocation">
+                            <option value="low risk">Low Risk</option>
+                            <option value="medium risk">Medium Risk</option>
+                            <option value="high risk">High Risk</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <h4>5. Asset Preference</h4>
+                        <select class="login-input" style="margin-bottom: 0;" name="asset_preference">
+                            <option value="forex">Forex</option>
+                            <option value="commodities">Commodities</option>
+                            <option value="crypto">Cryptocurrencies</option>
+                        </select>
+                    </div>
 
                     <button type="submit" class="lesson-btn"
                         style="width: 100%; padding: 10px; font-size: 13px; margin-top: 10px;">SIGN UP</button>
@@ -75,11 +124,6 @@
             <div class="lesson-block" style="border: none; background: transparent; padding: 0;">
                 <p>Already have an account? <a href="login.html"
                         style="color: #ff444f; font-weight: bold; text-decoration: none;">Log In</a></p>
-            </div>
-            
-            <div class="lesson-block" style="border: none; background: transparent; padding: 0;">
-                <p>Complete the questionnaire <a href="questionnaire.html"
-                        style="color: #ff444f; font-weight: bold; text-decoration: none;">Show Questionnaire</a></p>
             </div>
 
         </div>
