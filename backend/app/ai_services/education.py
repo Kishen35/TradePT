@@ -16,8 +16,7 @@ from app.prompts.education_prompts import (
     EDUCATION_SYSTEM_PROMPT,
     LESSON_GENERATION_TEMPLATE,
     TOPIC_SUGGESTION_TEMPLATE,
-    SKILL_LEVELS,
-    LESSON_TOPICS
+    SKILL_LEVELS
 )
 
 logger = logging.getLogger(__name__)
@@ -80,7 +79,7 @@ class EducationGenerator:
         """Lazy load the Anthropic client."""
         if self._client is None:
             if not self.settings.is_anthropic_configured():
-                logger.warning("Anthropic API key not configured. Using fallback lessons.")
+                logger.warning("Anthropic API key not configured. AI lessons will be unavailable.")
                 return None
             try:
                 import anthropic
@@ -137,7 +136,22 @@ class EducationGenerator:
             except Exception as e:
                 logger.error(f"Error generating lesson: {e}")
 
-        return self._fallback_lesson(topic, skill_level)
+        # Fallback removed - return error object
+        return GeneratedLesson(
+            title="Service Unavailable",
+            skill_level=skill_level,
+            estimated_time_minutes=0,
+            sections=[
+                LessonSection(
+                    heading="Error",
+                    content="AI service is currently unavailable. Please check configuration.",
+                    type="warning"
+                )
+            ],
+            quiz=[],
+            key_takeaways=[],
+            next_topics=[]
+        )
 
     async def suggest_topics(
         self,
@@ -172,7 +186,8 @@ class EducationGenerator:
             except Exception as e:
                 logger.error(f"Error suggesting topics: {e}")
 
-        return self._fallback_topics(skill_level, patterns)
+        # Fallback removed
+        return []
 
     async def _call_anthropic_lesson(
         self,
@@ -314,85 +329,6 @@ class EducationGenerator:
         except (json.JSONDecodeError, KeyError, ValueError) as e:
             logger.error(f"Failed to parse topics response: {e}")
             return []
-
-    def _fallback_lesson(self, topic: str, skill_level: str) -> GeneratedLesson:
-        """Generate a fallback lesson when API fails."""
-        return GeneratedLesson(
-            title=f"Introduction to {topic}",
-            skill_level=skill_level,
-            estimated_time_minutes=10,
-            sections=[
-                LessonSection(
-                    heading="Overview",
-                    content=f"This lesson covers the fundamentals of {topic}. "
-                            "The full personalized lesson will be available shortly. "
-                            "In the meantime, here are some key points to consider.",
-                    type="text"
-                ),
-                LessonSection(
-                    heading="Key Concept",
-                    content=f"Understanding {topic} is essential for improving your trading. "
-                            "Take time to research and practice these concepts.",
-                    type="text"
-                ),
-                LessonSection(
-                    heading="Practice Tip",
-                    content="Start with paper trading to apply these concepts without risking real money.",
-                    type="tip"
-                )
-            ],
-            quiz=[],
-            key_takeaways=[
-                "Learning is a continuous process in trading",
-                "Practice in a risk-free environment first",
-                "Keep a trading journal to track your progress"
-            ],
-            next_topics=LESSON_TOPICS.get(skill_level, LESSON_TOPICS["beginner"])[:3]
-        )
-
-    def _fallback_topics(
-        self,
-        skill_level: str,
-        patterns: List[str]
-    ) -> List[TopicSuggestion]:
-        """Generate fallback topic suggestions."""
-        topics = LESSON_TOPICS.get(skill_level, LESSON_TOPICS["beginner"])
-
-        # Prioritize based on detected patterns
-        prioritized = []
-
-        # Check for pattern-specific topics
-        pattern_topics = {
-            "revenge_trading": "Managing Trading Emotions",
-            "overtrading": "Building a Complete Trading Plan",
-            "risk_issues": "Position Sizing Strategies for Consistent Returns",
-            "loss_chasing": "Basic Risk Management: Never Risk More Than You Can Afford"
-        }
-
-        for pattern in patterns:
-            pattern_lower = pattern.lower()
-            for key, topic in pattern_topics.items():
-                if key in pattern_lower and topic in topics:
-                    prioritized.append(TopicSuggestion(
-                        topic=topic,
-                        relevance_score=0.95,
-                        reason=f"Recommended based on detected {pattern} pattern",
-                        difficulty=skill_level,
-                        estimated_duration_minutes=15
-                    ))
-
-        # Add remaining topics
-        for i, topic in enumerate(topics[:5]):
-            if topic not in [p.topic for p in prioritized]:
-                prioritized.append(TopicSuggestion(
-                    topic=topic,
-                    relevance_score=0.8 - (i * 0.1),
-                    reason=f"Standard recommendation for {skill_level} level",
-                    difficulty=skill_level,
-                    estimated_duration_minutes=15
-                ))
-
-        return prioritized[:5]
 
 
 # Factory function for dependency injection

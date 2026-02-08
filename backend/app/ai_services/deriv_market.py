@@ -124,6 +124,22 @@ class DerivMarketService:
 
             if portfolio_response and "portfolio" in portfolio_response:
                 contracts = portfolio_response["portfolio"].get("contracts", [])
+                
+                # Enrich contracts with real-time profit data
+                async def fetch_contract_details(contract):
+                    try:
+                        poc = await api.proposal_open_contract({"contract_id": contract["contract_id"]})
+                        if poc and "proposal_open_contract" in poc:
+                            details = poc["proposal_open_contract"]
+                            contract["profit"] = details.get("profit", 0)
+                            contract["current_price"] = details.get("bid_price", 0)
+                    except Exception as e:
+                        logger.warning(f"Failed to fetch details for contract {contract.get('contract_id')}: {e}")
+                    return contract
+
+                if contracts:
+                    contracts = await asyncio.gather(*[fetch_contract_details(c) for c in contracts])
+
                 return {
                     "positions_count": len(contracts),
                     "contracts": contracts

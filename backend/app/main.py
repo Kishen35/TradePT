@@ -4,12 +4,17 @@ from app.routers import ai, deriv, users
 
 app = FastAPI(title="TradePT Backend (with Python FastAPI + SQLite)")
 
-# CORS middleware - allows Chrome extension to call the backend
+# Configure CORS to allow extension requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (for development)
+    allow_origins=[
+        "https://app.deriv.com",
+        "http://localhost:3000",  # For development
+        "http://127.0.0.1:3000",
+        "chrome-extension://*",   # Allow any Chrome extension
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

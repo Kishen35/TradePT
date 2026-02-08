@@ -97,16 +97,6 @@ PATTERN_DESCRIPTIONS = {
     "late_exit": "Late exits on losses: You tend to hold losing trades too long, increasing losses."
 }
 
-# Quick insight templates for fallback scenarios
-FALLBACK_INSIGHTS = {
-    "high_win_rate": "Great job maintaining a {win_rate:.1f}% win rate! Focus on increasing position sizes on high-confidence setups.",
-    "low_win_rate": "Your win rate of {win_rate:.1f}% suggests reviewing your entry criteria. Consider paper trading to refine your strategy.",
-    "no_trades": "No trades recorded in this period. Consistent practice is key to improvement.",
-    "new_trader": "Welcome! You're just getting started. Focus on learning and small position sizes.",
-    "profitable": "You're profitable overall! Consider documenting what works for consistent results.",
-    "losing": "This period shows losses. Review your trades to identify what went wrong and learn from it."
-}
-
 # Example good insights for reference
 EXAMPLE_INSIGHTS = [
     {

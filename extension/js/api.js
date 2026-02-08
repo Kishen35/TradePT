@@ -1,6 +1,6 @@
 export class ApiHelper {
   constructor() {
-    console.log("Hi!");
+    this.baseUrl = "http://localhost:8000";
   }
 
   // TODO: apis
