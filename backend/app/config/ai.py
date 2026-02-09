@@ -4,8 +4,6 @@ AI Configuration Settings
 Loads API keys and model configurations from environment variables.
 Uses pydantic-settings for validation and type safety.
 """
-import os
-from typing import Optional
 from functools import lru_cache
 from pydantic_settings import BaseSettings
 from pydantic import Field

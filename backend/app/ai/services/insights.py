@@ -10,20 +10,20 @@ from datetime import datetime
 import json
 import logging
 
-from app.config.ai_config import get_ai_settings
-from app.ai_services.analysis import (
+from app.config.ai import get_ai_settings
+from .analysis import (
     get_recent_trades,
     calculate_statistics,
     detect_patterns,
     PatternDetectionResult,
     format_duration
 )
-from app.prompts.insight_prompts import (
+from app.ai.prompts.insight_prompts import (
     INSIGHT_SYSTEM_PROMPT,
     INSIGHT_USER_TEMPLATE,
     PATTERN_DESCRIPTIONS
 )
-from app.ai_services.deriv_market import get_market_service
+from .deriv_market import get_market_service
 
 logger = logging.getLogger(__name__)
 

@@ -4,15 +4,14 @@ Educational Content Generator Service
 Uses Anthropic Claude API to generate personalized trading lessons
 based on user skill level, trading patterns, and identified weaknesses.
 """
-from typing import Dict, Any, Optional, List
+from typing import Optional, List
 from dataclasses import dataclass, field
-from datetime import datetime
 import json
 import logging
 
-from app.config.ai_config import get_ai_settings
-from app.ai_services.embeddings import get_embedding_service
-from app.prompts.education_prompts import (
+from app.config.ai import get_ai_settings
+from .embeddings import get_embedding_service
+from app.ai.prompts.education_prompts import (
     EDUCATION_SYSTEM_PROMPT,
     LESSON_GENERATION_TEMPLATE,
     TOPIC_SUGGESTION_TEMPLATE,

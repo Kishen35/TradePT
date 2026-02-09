@@ -29,7 +29,7 @@ def _get_embedding_model():
     if _model is None:
         try:
             from sentence_transformers import SentenceTransformer
-            from app.config.ai_config import get_ai_settings
+            from app.config.ai import get_ai_settings
 
             settings = get_ai_settings()
             logger.info(f"Loading embedding model: {settings.embedding_model_name}")
@@ -365,3 +365,10 @@ def get_embedding_service() -> EmbeddingService:
     if _embedding_service is None:
         _embedding_service = EmbeddingService()
     return _embedding_service
+
+
+# Example usage
+if __name__ == "__main__":
+    embeddings = get_embedding_service()
+    result = embeddings.get_embedding("What is RSI?")
+    print(result)

@@ -10,7 +10,7 @@ Components:
 - chat: Conversational trading assistant
 - embeddings: Semantic search using sentence-transformers
 """
-from app.ai_services.analysis import (
+from .analysis import (
     get_recent_trades,
     calculate_win_rate,
     calculate_statistics,
@@ -19,13 +19,13 @@ from app.ai_services.analysis import (
     PatternDetectionResult,
     format_duration
 )
-from app.ai_services.insights import (
+from .insights import (
     get_insight_generator,
     InsightGenerator,
     InsightResponse,
     TradingInsight
 )
-from app.ai_services.education import (
+from .education import (
     get_education_generator,
     EducationGenerator,
     GeneratedLesson,
@@ -33,17 +33,17 @@ from app.ai_services.education import (
     LessonSection,
     QuizQuestion
 )
-from app.ai_services.chat import (
+from .chat import (
     get_chatbot,
     TradingChatBot,
     ChatSession,
     ChatMessage
 )
-from app.ai_services.embeddings import (
+from .embeddings import (
     get_embedding_service,
     EmbeddingService
 )
-from app.ai_services.deriv_market import (
+from .deriv_market import (
     get_market_service,
     DerivMarketService,
     MarketSnapshot,

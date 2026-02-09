@@ -11,14 +11,13 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-import uuid
 import logging
 
 from app.config.db import get_db
-from app.ai_services.insights import get_insight_generator
-from app.ai_services.education import get_education_generator
-from app.ai_services.chat import get_chatbot
-from app.ai_services.analysis import (
+from app.ai.services.insights import get_insight_generator
+from app.ai.services.education import get_education_generator
+from app.ai.services.chat import get_chatbot
+from app.ai.services.analysis import (
     get_recent_trades,
     calculate_statistics,
     detect_patterns
@@ -127,7 +126,7 @@ async def health_check():
 
     Returns status of each AI service component.
     """
-    from app.config.ai_config import get_ai_settings
+    from app.config.ai import get_ai_settings
 
     settings = get_ai_settings()
 

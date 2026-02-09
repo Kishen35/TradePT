@@ -10,14 +10,14 @@ from datetime import datetime
 import uuid
 import logging
 
-from app.config.ai_config import get_ai_settings
-from app.prompts.chat_prompts import (
+from app.config.ai import get_ai_settings
+from app.ai.prompts.chat_prompts import (
     CHAT_SYSTEM_PROMPT,
     CHAT_WITH_HISTORY_TEMPLATE,
     CONTEXT_BUILDING_TEMPLATE,
     QUICK_RESPONSES
 )
-from app.ai_services.deriv_market import get_market_service
+from .deriv_market import get_market_service
 from app.database.models.users import User
 from app.config.db import SessionLocal
 
