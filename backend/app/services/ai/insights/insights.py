@@ -11,19 +11,13 @@ import json
 import logging
 
 from app.config.ai import get_ai_settings
-from .analysis import (
-    get_recent_trades,
-    calculate_statistics,
-    detect_patterns,
-    PatternDetectionResult,
-    format_duration
-)
-from app.ai.prompts.insight_prompts import (
+from app.services.analysis import get_analysis_service
+from app.services.ai.insights.insight_prompts import (
     INSIGHT_SYSTEM_PROMPT,
     INSIGHT_USER_TEMPLATE,
     PATTERN_DESCRIPTIONS
 )
-from .deriv_market import get_market_service
+from app.services.deriv import get_market_service
 
 logger = logging.getLogger(__name__)
 

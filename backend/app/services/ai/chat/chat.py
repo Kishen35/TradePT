@@ -11,14 +11,14 @@ import uuid
 import logging
 
 from app.config.ai import get_ai_settings
-from app.ai.prompts.chat_prompts import (
+from app.services.ai.chat.chat_prompts import (
     CHAT_SYSTEM_PROMPT,
     CHAT_WITH_HISTORY_TEMPLATE,
     CONTEXT_BUILDING_TEMPLATE,
     QUICK_RESPONSES
 )
-from .deriv_market import get_market_service
-from app.database.models.users import User
+from app.services.deriv import get_market_service
+from app.database.model.users import User
 from app.config.db import SessionLocal
 
 logger = logging.getLogger(__name__)
