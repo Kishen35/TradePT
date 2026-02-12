@@ -20,7 +20,7 @@ class AISettings(BaseSettings):
 
     # Anthropic API Configuration (for education and chat)
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
-    anthropic_model_name: str = Field(default="claude-3-5-sonnet-20241022", alias="ANTHROPIC_MODEL_NAME")
+    anthropic_model_name: str = Field(default="claude-sonnet-4-20250514", alias="ANTHROPIC_MODEL_NAME")
     anthropic_max_tokens: int = Field(default=4096, alias="ANTHROPIC_MAX_TOKENS")
 
     # Embedding Configuration

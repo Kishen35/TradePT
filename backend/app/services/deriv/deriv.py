@@ -7,12 +7,11 @@ for AI-generated responses and insights.
 
 from typing import Dict, Any, Optional, List
 from app.services.logger.logger import logger
-from app.config.deriv import get_deriv_api, deriv_api_token
+from app.config.deriv import deriv_api_token, DerivAPI, deriv_app_id
 from app.services.deriv.typings import AccountInfo
 import asyncio
 
 # TODO: check typings and update as needed
-
 
 class DerivService:
     """
@@ -24,40 +23,27 @@ class DerivService:
 
     def __init__(self):
         """Initialize the market service."""
-        self._deriv_api = None
-        self._token = None
+        self._token = deriv_api_token
         self._is_authorized = False
+        self._api = None
 
-    def _get_api(self):
-        """Load the Deriv API client."""
-        if self._deriv_api is None:
+    def _get_deriv_api(self):
+        """Get the configured Deriv API instance, lazy-loaded and reconnect if closed."""
+        reconnect = False
+
+        if self._api is None:
+            reconnect = True
+        else:
+            # Check if the WebSocket inside DerivAPI exists and is open
             try:
-                self._deriv_api = get_deriv_api()
-                self._token = deriv_api_token
-            except ImportError as e:
-                logger.error(f"Failed to import Deriv API: {e}")
-                return None
-            except Exception as e:
-                logger.error(f"Failed to initialize Deriv API: {e}")
-                return None
-        return self._deriv_api
+                # Some DerivAPI clients use self.ws.sock.connected
+                if not getattr(self._api, 'ws', None) or not getattr(self._api.ws, 'sock', None) or not self._api.ws.sock.connected:
+                    reconnect = True
+            except Exception:
+                reconnect = True
 
-    async def _ensure_authorized(self) -> bool:
-        """Ensure the API is authorized."""
-        if self._is_authorized:
-            return True
-
-        api = self._get_api()
-        if not api or not self._token:
-            return False
-
-        try:
-            await api.authorize(self._token)
-            self._is_authorized = True
-            return True
-        except Exception as e:
-            logger.error(f"Failed to authorize Deriv API: {e}")
-            return False
+        if reconnect:
+            self._api = DerivAPI(app_id=deriv_app_id)
 
     async def get_account_balance(self) -> Optional[AccountInfo]:
         """
@@ -66,15 +52,13 @@ class DerivService:
         Returns:
             AccountInfo with balance details, or None if unavailable
         """
-        api = self._get_api()
-        if not api:
+        self._get_deriv_api()
+        if not self._api:
             return None
 
         try:
-            if not await self._ensure_authorized():
-                return None
-
-            balance_response = await api.balance()
+            await self._api.authorize(self._token)
+            balance_response = await self._api.balance()
             if balance_response and "balance" in balance_response:
                 balance_data = balance_response["balance"]
                 return AccountInfo(
@@ -94,15 +78,13 @@ class DerivService:
         Returns:
             Dictionary with portfolio data, or None if unavailable
         """
-        api = self._get_api()
-        if not api:
+        self._get_deriv_api()
+        if not self._api:
             return None
 
         try:
-            if not await self._ensure_authorized():
-                return None
-
-            portfolio_response = await api.portfolio()
+            await self._api.authorize(self._token)
+            portfolio_response = await self._api.portfolio()
 
             if portfolio_response and "portfolio" in portfolio_response:
                 contracts = portfolio_response["portfolio"].get("contracts", [])
@@ -110,7 +92,7 @@ class DerivService:
                 # Enrich contracts with real-time profit data
                 async def fetch_contract_details(contract):
                     try:
-                        poc = await api.proposal_open_contract({"contract_id": contract["contract_id"]})
+                        poc = await self._api.proposal_open_contract({"contract_id": contract["contract_id"]})
                         if poc and "proposal_open_contract" in poc:
                             details = poc["proposal_open_contract"]
                             contract["profit"] = details.get("profit", 0)
@@ -141,15 +123,13 @@ class DerivService:
         Returns:
             Dictionary of currency rates, or None if unavailable
         """
-        api = self._get_api()
-        if not api:
+        self._get_deriv_api()
+        if not self._api:
             return None
 
         try:
-            if not await self._ensure_authorized():
-                return None
-
-            rates_response = await api.exchange_rates({"base_currency": base_currency})
+            await self._api.authorize(self._token)
+            rates_response = await self._api.exchange_rates({"base_currency": base_currency})
 
             if rates_response and "exchange_rates" in rates_response:
                 return rates_response["exchange_rates"].get("rates", {})
@@ -168,18 +148,16 @@ class DerivService:
         Returns:
             List of trade dictionaries
         """
-        api = self._get_api()
-        if not api:
+        self._get_deriv_api()
+        if not self._api:
             return []
 
         try:
-            if not await self._ensure_authorized():
-                return []
-
             # API call for profit table
             # "description": 1 gets full details, "sort": "DESC" puts newest first usually, 
             # but standard API might just return list. We'll slice it.
-            response = await api.profit_table({"limit": limit, "description": 1})
+            await self._api.authorize(self._token)
+            response = await self._api.profit_table({"limit": limit, "description": 1})
             
             if response and "profit_table" in response:
                 transactions = response["profit_table"].get("transactions", [])

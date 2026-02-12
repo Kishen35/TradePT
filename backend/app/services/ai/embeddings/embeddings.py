@@ -8,19 +8,17 @@ Uses sentence-transformers for local embedding generation (no API cost).
 """
 from typing import List, Optional, Dict, Any, Tuple
 from functools import lru_cache
-import logging
+from app.services.logger.logger import logger
+from sentence_transformers import SentenceTransformer
+from app.config.ai import get_ai_settings
 
-logger = logging.getLogger(__name__)
 
 # Lazy-loaded model to avoid slow startup
 _model = None
 
-
 def _get_embedding_model():
     """
-    Lazy load the sentence-transformers embedding model.
-
-    The model is loaded only when first needed to avoid slow startup times.
+    Load the sentence-transformers embedding model.
 
     Returns:
         SentenceTransformer model instance
@@ -28,9 +26,6 @@ def _get_embedding_model():
     global _model
     if _model is None:
         try:
-            from sentence_transformers import SentenceTransformer
-            from app.config.ai import get_ai_settings
-
             settings = get_ai_settings()
             logger.info(f"Loading embedding model: {settings.embedding_model_name}")
             _model = SentenceTransformer(
@@ -352,7 +347,6 @@ class EmbeddingService:
 
 # Singleton instance
 _embedding_service: Optional[EmbeddingService] = None
-
 
 def get_embedding_service() -> EmbeddingService:
     """
