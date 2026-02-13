@@ -5,49 +5,21 @@ Uses Claude API to generate personalized trading insights
 based on statistical analysis of user trade data.
 """
 from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
 from datetime import datetime
 import json
-import logging
 
-from app.config.ai_config import get_ai_settings
-from app.ai_services.analysis import (
-    get_recent_trades,
-    calculate_statistics,
-    detect_patterns,
-    PatternDetectionResult,
-    format_duration
-)
-from app.prompts.insight_prompts import (
+from app.services.ai.llm.insights.typings import InsightResponse, TradingInsight
+from app.services.ai.llm.insights.insight_prompts import (
     INSIGHT_SYSTEM_PROMPT,
     INSIGHT_USER_TEMPLATE,
     PATTERN_DESCRIPTIONS
 )
-from app.ai_services.deriv_market import get_market_service
+from app.services.logger.logger import logger
+from app.services.ai.llm.connector import LLMConnector
+from app.services.analysis.typings import PatternDetectionResult
+from app.database.model import users as UserModels
 
-logger = logging.getLogger(__name__)
-
-
-@dataclass
-class TradingInsight:
-    """A single trading insight."""
-    type: str  # "strength", "weakness", "observation"
-    message: str
-    priority: str  # "high", "medium", "low"
-
-
-@dataclass
-class InsightResponse:
-    """Complete insight response for a user."""
-    summary: str
-    insights: List[TradingInsight]
-    recommendations: List[str]
-    statistics: Dict[str, Any]
-    suggested_lesson: str = ""
-    generated_at: str = field(default_factory=lambda: datetime.now().isoformat())
-
-
-class InsightGenerator:
+class InsightGenerator(LLMConnector):
     """
     Generates personalized trading insights using Claude AI.
 
@@ -57,41 +29,19 @@ class InsightGenerator:
 
     def __init__(self):
         """Initialize the insight generator with Claude client."""
-        self.settings = get_ai_settings()
-        self._client = None
-
-    def _get_client(self):
-        """Lazy load the Claude client."""
-        if self._client is None:
-            if not self.settings.is_anthropic_configured():
-                logger.warning("Anthropic API key not configured. AI insights will be unavailable.")
-                return None
-            try:
-                import anthropic
-                self._client = anthropic.Anthropic(api_key=self.settings.anthropic_api_key)
-            except ImportError:
-                logger.error("Anthropic package not installed.")
-                return None
-            except Exception as e:
-                logger.error(f"Failed to initialize Anthropic client: {e}")
-                return None
-        return self._client
+        super().__init__()
 
     async def generate_insights(
         self,
-        db,
         user_id: int,
-        days: int = 7,
-        user_level: str = "beginner",
+        limit: int = 5,
         user_context: Optional[Dict[str, Any]] = None
     ) -> InsightResponse:
         """
         Generate trading insights for a user.
 
         Args:
-            db: Database session
-            user_id: The user's ID
-            days: Number of days to analyze
+            limit: Number of trades to analyze
             user_level: User's skill level
             user_context: Optional user preferences from questionnaire
 
@@ -99,48 +49,62 @@ class InsightGenerator:
             InsightResponse with insights and recommendations
         """
         # Fetch and analyze trades
-        trades = get_recent_trades(db, user_id, days)
+        trades = await self._deriv_service.get_recent_trades(limit)
 
         if not trades:
             return self._empty_response()
 
-        statistics = calculate_statistics(trades)
-        patterns = detect_patterns(trades)
+        statistics = self._analysis_service.calculate_statistics(trades)
+        patterns = self._analysis_service.detect_patterns(trades)
 
         # Format patterns for the prompt
         pattern_text = self._format_patterns(patterns)
 
         # Calculate average trade duration
-        avg_duration = format_duration(statistics["average_trade_duration_hours"])
+        avg_duration = self._analysis_service.format_duration(statistics["average_trade_duration_hours"])
 
         # Parse user preferences from context
         if user_context is None:
             user_context = {}
 
+        try:
+            user = self._db.query(UserModels.User).filter(UserModels.User.id == user_id).first()
+            if user:
+                db_experience = user.experience_level or "beginner"
+                db_trading_style = user.trading_duration or "day trader"
+                db_risk_behavior = user.risk_tolerance or "cut loss"
+                db_capital_allocation = user.capital_allocation or "low risk"
+                db_asset_preference = user.asset_preference or "commodities"
+        except Exception as e:
+                logger.error(f"Error fetching user profile: {e}")
+
         preferences = {
-            "experience_level": user_context.get("experience_level", user_level),
-            "trading_style": user_context.get("trading_style", "day_trader"),
-            "risk_behavior": user_context.get("risk_behavior", "conservative"),
+            "experience_level": user_context.get("experience_level", db_experience),
+            "capital_allocation": user_context.get("capital_allocation", db_capital_allocation),
+            "trading_style": user_context.get("trading_style", db_trading_style),
+            "risk_behavior": user_context.get("risk_behavior", db_risk_behavior),
             "risk_per_trade": user_context.get("risk_per_trade", 2.0),
-            "preferred_assets": user_context.get("preferred_assets", [])
+            "preferred_assets": user_context.get("preferred_assets", db_asset_preference)
         }
 
         # Fetch market context from Deriv API
         market_context = "Market data not available"
         try:
-            market_service = get_market_service()
-            market_context = await market_service.get_market_context_safe(
-                preferences["preferred_assets"]
+            # market_context = await self._deriv_service.get_market_context_safe(
+            #     [preferences["preferred_assets"]]
+            # )
+            market_context = await self._deriv_service.get_market_context(
+                [preferences["preferred_assets"]]
             )
         except Exception as e:
             logger.warning(f"Could not fetch market context: {e}")
 
         # Try to generate AI insight
-        client = self._get_client()
-        if client:
+        self._client = self._get_client()
+        if self._client:
             try:
-                response = await self._call_claude(
-                    statistics, pattern_text, avg_duration, days, user_level,
+                response = await self._get_insight_llm(
+                    statistics, pattern_text, avg_duration, limit, preferences["experience_level"],
                     preferences, market_context
                 )
                 return self._parse_response(response, statistics)
@@ -156,7 +120,7 @@ class InsightGenerator:
             suggested_lesson=""
         )
 
-    async def _call_claude(
+    async def _get_insight_llm(
         self,
         stats: Dict[str, Any],
         pattern_text: str,
@@ -166,9 +130,7 @@ class InsightGenerator:
         preferences: Dict[str, Any] = None,
         market_context: str = "Market data not available"
     ) -> str:
-        """Make API call to Claude."""
-        import asyncio
-
+        """Make API call to LLM for insights generation."""
         if preferences is None:
             preferences = {}
 
@@ -176,6 +138,7 @@ class InsightGenerator:
             # User preferences from questionnaire
             experience_level=preferences.get("experience_level", user_level),
             trading_style=preferences.get("trading_style", "day_trader"),
+            capital_allocation=preferences.get("capital_allocation", "low risk"),
             risk_behavior=preferences.get("risk_behavior", "conservative"),
             risk_per_trade=preferences.get("risk_per_trade", 2.0),
             preferred_assets=", ".join(preferences.get("preferred_assets", [])) or "various",
@@ -199,21 +162,14 @@ class InsightGenerator:
 
         # Add JSON instruction to prompt since Claude doesn't have response_format
         json_prompt = prompt + "\n\nIMPORTANT: Respond with valid JSON only. No other text."
-
-        def _sync_call():
-            client = self._get_client()
-            response = client.messages.create(
-                model=self.settings.anthropic_model_name,
-                max_tokens=self.settings.anthropic_max_tokens,
-                system=INSIGHT_SYSTEM_PROMPT + "\n\nAlways respond with valid JSON format.",
-                messages=[
-                    {"role": "user", "content": json_prompt}
-                ]
-            )
-            return response.content[0].text
-
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, _sync_call)
+        
+        return await self._call_llm(
+            system_prompt=INSIGHT_SYSTEM_PROMPT,
+            messages=[
+                {"role": "user", "content": json_prompt}
+            ],
+            max_tokens=1024
+        )
 
     def _format_patterns(self, patterns: List[PatternDetectionResult]) -> str:
         """Format detected patterns for the prompt."""
@@ -283,11 +239,24 @@ class InsightGenerator:
 
 # Factory function for dependency injection
 _insight_generator: Optional[InsightGenerator] = None
-
-
 def get_insight_generator() -> InsightGenerator:
     """Get the singleton InsightGenerator instance."""
     global _insight_generator
     if _insight_generator is None:
         _insight_generator = InsightGenerator()
     return _insight_generator
+
+# Example usage:
+if __name__ == "__main__":
+    import asyncio
+
+    async def main():
+        generator = get_insight_generator()
+        insights = await generator.generate_insights(
+            limit=10,
+            user_id=1,
+            user_context={}
+        )
+        print(insights)
+
+    asyncio.run(main())

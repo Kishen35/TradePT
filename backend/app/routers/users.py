@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database.models import users as UserModels
+from app.database.model import users as UserModels
 from app.database.schemas import users as UserSchemas
 from app.config.db import engine
 from app.config.db import get_db

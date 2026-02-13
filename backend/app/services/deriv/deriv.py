@@ -4,33 +4,16 @@ Deriv Market Data Service
 Fetches real-time market data from Deriv API to provide context
 for AI-generated responses and insights.
 """
+
 from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
-from datetime import datetime
-import logging
+from app.services.logger.logger import logger
+from app.config.deriv import deriv_api_token, DerivAPI, deriv_app_id
+from app.services.deriv.typings import AccountInfo
 import asyncio
 
-logger = logging.getLogger(__name__)
+# TODO: check typings and update as needed
 
-
-@dataclass
-class MarketSnapshot:
-    """Current market data for a symbol."""
-    symbol: str
-    current_price: float
-    change_percent: float
-    timestamp: datetime
-
-
-@dataclass
-class AccountInfo:
-    """User's account information from Deriv."""
-    balance: float
-    currency: str
-    open_positions: int
-
-
-class DerivMarketService:
+class DerivService:
     """
     Service for fetching market data from Deriv API.
 
@@ -40,41 +23,27 @@ class DerivMarketService:
 
     def __init__(self):
         """Initialize the market service."""
-        self._api = None
-        self._token = None
+        self._token = deriv_api_token
         self._is_authorized = False
+        self._api = None
 
-    def _get_api(self):
-        """Lazy load the Deriv API client."""
+    def _get_deriv_api(self):
+        """Get the configured Deriv API instance, lazy-loaded and reconnect if closed."""
+        reconnect = False
+
         if self._api is None:
+            reconnect = True
+        else:
+            # Check if the WebSocket inside DerivAPI exists and is open
             try:
-                from app.config.deriv import get_deriv_api, deriv_api_token
-                self._api = get_deriv_api()
-                self._token = deriv_api_token
-            except ImportError as e:
-                logger.error(f"Failed to import Deriv API: {e}")
-                return None
-            except Exception as e:
-                logger.error(f"Failed to initialize Deriv API: {e}")
-                return None
-        return self._api
+                # Some DerivAPI clients use self.ws.sock.connected
+                if not getattr(self._api, 'ws', None) or not getattr(self._api.ws, 'sock', None) or not self._api.ws.sock.connected:
+                    reconnect = True
+            except Exception:
+                reconnect = True
 
-    async def _ensure_authorized(self) -> bool:
-        """Ensure the API is authorized."""
-        if self._is_authorized:
-            return True
-
-        api = self._get_api()
-        if not api or not self._token:
-            return False
-
-        try:
-            await api.authorize(self._token)
-            self._is_authorized = True
-            return True
-        except Exception as e:
-            logger.error(f"Failed to authorize Deriv API: {e}")
-            return False
+        if reconnect:
+            self._api = DerivAPI(app_id=deriv_app_id)
 
     async def get_account_balance(self) -> Optional[AccountInfo]:
         """
@@ -83,16 +52,13 @@ class DerivMarketService:
         Returns:
             AccountInfo with balance details, or None if unavailable
         """
-        api = self._get_api()
-        if not api:
+        self._get_deriv_api()
+        if not self._api:
             return None
 
         try:
-            if not await self._ensure_authorized():
-                return None
-
-            balance_response = await api.balance()
-
+            await self._api.authorize(self._token)
+            balance_response = await self._api.balance()
             if balance_response and "balance" in balance_response:
                 balance_data = balance_response["balance"]
                 return AccountInfo(
@@ -112,15 +78,13 @@ class DerivMarketService:
         Returns:
             Dictionary with portfolio data, or None if unavailable
         """
-        api = self._get_api()
-        if not api:
+        self._get_deriv_api()
+        if not self._api:
             return None
 
         try:
-            if not await self._ensure_authorized():
-                return None
-
-            portfolio_response = await api.portfolio()
+            await self._api.authorize(self._token)
+            portfolio_response = await self._api.portfolio()
 
             if portfolio_response and "portfolio" in portfolio_response:
                 contracts = portfolio_response["portfolio"].get("contracts", [])
@@ -128,7 +92,7 @@ class DerivMarketService:
                 # Enrich contracts with real-time profit data
                 async def fetch_contract_details(contract):
                     try:
-                        poc = await api.proposal_open_contract({"contract_id": contract["contract_id"]})
+                        poc = await self._api.proposal_open_contract({"contract_id": contract["contract_id"]})
                         if poc and "proposal_open_contract" in poc:
                             details = poc["proposal_open_contract"]
                             contract["profit"] = details.get("profit", 0)
@@ -159,15 +123,13 @@ class DerivMarketService:
         Returns:
             Dictionary of currency rates, or None if unavailable
         """
-        api = self._get_api()
-        if not api:
+        self._get_deriv_api()
+        if not self._api:
             return None
 
         try:
-            if not await self._ensure_authorized():
-                return None
-
-            rates_response = await api.exchange_rates({"base_currency": base_currency})
+            await self._api.authorize(self._token)
+            rates_response = await self._api.exchange_rates({"base_currency": base_currency})
 
             if rates_response and "exchange_rates" in rates_response:
                 return rates_response["exchange_rates"].get("rates", {})
@@ -186,18 +148,16 @@ class DerivMarketService:
         Returns:
             List of trade dictionaries
         """
-        api = self._get_api()
-        if not api:
+        self._get_deriv_api()
+        if not self._api:
             return []
 
         try:
-            if not await self._ensure_authorized():
-                return []
-
             # API call for profit table
             # "description": 1 gets full details, "sort": "DESC" puts newest first usually, 
             # but standard API might just return list. We'll slice it.
-            response = await api.profit_table({"limit": limit, "description": 1})
+            await self._api.authorize(self._token)
+            response = await self._api.profit_table({"limit": limit, "description": 1})
             
             if response and "profit_table" in response:
                 transactions = response["profit_table"].get("transactions", [])
@@ -292,12 +252,27 @@ class DerivMarketService:
 
 
 # Singleton instance
-_market_service: Optional[DerivMarketService] = None
+_deriv_service: Optional[DerivService] = None
 
+def get_deriv_service() -> DerivService:
+    """Get the singleton DerivService instance."""
+    global _deriv_service
+    if _deriv_service is None:
+        _deriv_service = DerivService()
+    return _deriv_service
 
-def get_market_service() -> DerivMarketService:
-    """Get the singleton DerivMarketService instance."""
-    global _market_service
-    if _market_service is None:
-        _market_service = DerivMarketService()
-    return _market_service
+# Example usage
+if __name__ == "__main__":
+    service = get_deriv_service()
+    account_balance = asyncio.get_event_loop().run_until_complete(service.get_account_balance())
+    print(f"Account Balance: {account_balance}")
+    portfolio = asyncio.get_event_loop().run_until_complete(service.get_portfolio())
+    print(f"Portfolio: {portfolio}")
+    exchange_rates = asyncio.get_event_loop().run_until_complete(service.get_exchange_rates())
+    print(f"Exchange Rates: {exchange_rates}")
+    recent_trades = asyncio.get_event_loop().run_until_complete(service.get_recent_trades())
+    print(f"Recent Trades: {recent_trades}")
+    market_context = asyncio.get_event_loop().run_until_complete(service.get_market_context(preferred_assets=["EURUSD", "GBPUSD", "USDJPY"]))
+    print(f"Market Context:\n{market_context}")
+    market_context_safe = asyncio.get_event_loop().run_until_complete(service.get_market_context_safe(preferred_assets=["EURUSD", "GBPUSD", "USDJPY"]))
+    print(f"Market Context Safe:\n{market_context_safe}")

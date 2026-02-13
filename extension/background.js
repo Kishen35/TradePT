@@ -22,6 +22,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.type === "user_session_data") {
+    // Relay user session data to content script
     console.log(
       "Received user session data in background script:",
       request.payload,

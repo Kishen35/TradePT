@@ -47,6 +47,7 @@ CONTEXT_BUILDING_TEMPLATE = """User Trading Profile:
 
 ## Questionnaire Preferences (from onboarding)
 - Experience Level: {experience_level}
+- Capital Allocation: {capital_allocation}
 - Trading Style: {trading_style}
 - Risk Behavior: {risk_behavior}
 - Risk Per Trade: {risk_per_trade}%

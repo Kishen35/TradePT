@@ -31,6 +31,7 @@ INSIGHT_USER_TEMPLATE = """Analyze the following trading statistics and provide 
 
 ## User Profile (from Questionnaire)
 - Experience Level: {experience_level}
+- Capital Allocation: {capital_allocation}
 - Trading Style: {trading_style}
 - Risk Behavior: {risk_behavior}
 - Risk Per Trade Target: {risk_per_trade}%
