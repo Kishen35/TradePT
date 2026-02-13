@@ -101,6 +101,10 @@ class AnalysisService:
         for t in trades:
             sell_time = t.get('sell_time', None)
             purchase_time = t.get('purchase_time', None)
+            if type(sell_time) is float or type(sell_time) is int:
+                sell_time = datetime.fromtimestamp(sell_time)
+            if type(purchase_time) is float or type(purchase_time) is int:
+                purchase_time = datetime.fromtimestamp(purchase_time)
             if sell_time and purchase_time:
                 duration = (sell_time - purchase_time).total_seconds() / 3600
                 durations.append(duration)
@@ -199,6 +203,11 @@ class AnalysisService:
             prev_pl = (prev_trade.get('sell_price', 0) - prev_trade.get('buy_price', 0)) or 0
             prev_time = prev_trade.get('purchase_time', datetime.min)
             curr_time = curr_trade.get('purchase_time', datetime.min)
+            
+            if type(prev_time) is float or type(prev_time) is int:
+                prev_time = datetime.fromtimestamp(prev_time)
+            if type(curr_time) is float or type(curr_time) is int:
+                curr_time = datetime.fromtimestamp(curr_time)
 
             # Check if previous trade was a loss
             if prev_pl < 0:
@@ -238,6 +247,10 @@ class AnalysisService:
 
         first_trade_time = trades[0].get('purchase_time', datetime.now())
         last_trade_time = trades[-1].get('purchase_time', datetime.now())
+        if type(first_trade_time) is float or type(first_trade_time) is int:
+            first_trade_time = datetime.fromtimestamp(first_trade_time)
+        if type(last_trade_time) is float or type(last_trade_time) is int:
+            last_trade_time = datetime.fromtimestamp(last_trade_time)
 
         date_range = (last_trade_time - first_trade_time).days or 1
         trades_per_day = len(trades) / date_range
@@ -269,7 +282,12 @@ class AnalysisService:
             )
 
         # Extract trading hours
-        hours = [t.get('purchase_time', datetime.now()).hour for t in trades]
+        hours = []
+        for t in trades:
+            purchase_time = t.get('purchase_time', datetime.now())
+            if type(purchase_time) is float or type(purchase_time) is int:
+                purchase_time = datetime.fromtimestamp(purchase_time)
+            hours.append(purchase_time.hour)
 
         # Calculate standard deviation of trading hours
         if len(set(hours)) == 1:
@@ -393,7 +411,7 @@ class AnalysisService:
         return mock_trades
 
 
-    def format_duration(hours: float) -> str:
+    def format_duration(self, hours: float) -> str:
         """
         Format duration in human-readable format.
 

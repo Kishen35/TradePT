@@ -6,7 +6,6 @@ Maintains conversation history and context for coherent multi-turn dialogues.
 """
 from typing import Dict, Any, Optional, List
 import uuid
-import logging
 from app.services.ai.llm.chat.chat_prompts import (
     CHAT_SYSTEM_PROMPT,
     CHAT_WITH_HISTORY_TEMPLATE,
@@ -183,13 +182,12 @@ class TradingChatBot(LLMConnector):
         session.add_message("user", message)
 
         # Check for quick responses (greetings, etc.)
-        quick_response = self._check_quick_response(message)
-        if quick_response:
-            session.add_message("assistant", quick_response)
-            return quick_response, session.session_id
+        # quick_response = self._check_quick_response(message)
+        # if quick_response:
+        #     session.add_message("assistant", quick_response)
+        #     return quick_response, session.session_id
 
         # Build system prompt with user context
-        print(session.user_context)
         system_prompt = CHAT_SYSTEM_PROMPT.format(
             user_context=session.user_context or "No specific context available."
         )
@@ -307,6 +305,7 @@ if __name__ == "__main__":
             session_id=None,
             user_id=1,
             message=message,
+            user_context={}
         )
         print(f"AI Response: {response}")
         print(f"Session ID: {session_id}")
