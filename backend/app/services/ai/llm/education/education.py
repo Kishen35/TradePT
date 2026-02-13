@@ -5,62 +5,24 @@ Uses Anthropic Claude API to generate personalized trading lessons
 based on user skill level, trading patterns, and identified weaknesses.
 """
 from typing import Optional, List
-from dataclasses import dataclass, field
 import json
-import logging
-
-from app.config.ai import get_ai_settings
-from .embeddings import get_embedding_service
-from app.ai.prompts.education_prompts import (
+from app.services.logger.logger import logger
+from app.services.ai.embeddings.embeddings import get_embedding_service
+from app.services.ai.llm.education.education_prompts import (
     EDUCATION_SYSTEM_PROMPT,
     LESSON_GENERATION_TEMPLATE,
-    TOPIC_SUGGESTION_TEMPLATE,
-    SKILL_LEVELS
+    TOPIC_SUGGESTION_TEMPLATE
 )
+from app.services.ai.llm.connector import LLMConnector
+from app.services.ai.llm.education.typings import (
+    GeneratedLesson,
+    LessonSection,
+    QuizQuestion,
+    TopicSuggestion
+)
+from app.database.model import users as UserModels
 
-logger = logging.getLogger(__name__)
-
-
-@dataclass
-class LessonSection:
-    """A section within a lesson."""
-    heading: str
-    content: str
-    type: str  # "text", "example", "warning", "tip"
-
-
-@dataclass
-class QuizQuestion:
-    """A quiz question."""
-    question: str
-    options: List[str]
-    correct: str
-    explanation: str
-
-
-@dataclass
-class GeneratedLesson:
-    """A complete generated lesson."""
-    title: str
-    skill_level: str
-    estimated_time_minutes: int
-    sections: List[LessonSection]
-    quiz: List[QuizQuestion]
-    key_takeaways: List[str]
-    next_topics: List[str] = field(default_factory=list)
-
-
-@dataclass
-class TopicSuggestion:
-    """A suggested lesson topic."""
-    topic: str
-    relevance_score: float
-    reason: str
-    difficulty: str = "beginner"
-    estimated_duration_minutes: int = 15
-
-
-class EducationGenerator:
+class EducationGenerator(LLMConnector):
     """
     Generates personalized educational content using Anthropic Claude.
 
@@ -70,31 +32,13 @@ class EducationGenerator:
 
     def __init__(self):
         """Initialize the education generator with Anthropic client."""
-        self.settings = get_ai_settings()
-        self._client = None
+        super().__init__()
         self.embedding_service = get_embedding_service()
-
-    def _get_client(self):
-        """Lazy load the Anthropic client."""
-        if self._client is None:
-            if not self.settings.is_anthropic_configured():
-                logger.warning("Anthropic API key not configured. AI lessons will be unavailable.")
-                return None
-            try:
-                import anthropic
-                self._client = anthropic.Anthropic(api_key=self.settings.anthropic_api_key)
-            except ImportError:
-                logger.error("Anthropic package not installed.")
-                return None
-            except Exception as e:
-                logger.error(f"Failed to initialize Anthropic client: {e}")
-                return None
-        return self._client
 
     async def generate_lesson(
         self,
+        user_id: int,
         topic: str,
-        skill_level: str = "beginner",
         instruments: Optional[List[str]] = None,
         weakness: Optional[str] = None,
         performance_summary: Optional[str] = None,
@@ -116,9 +60,12 @@ class EducationGenerator:
         Returns:
             GeneratedLesson with full content
         """
-        # Validate skill level
-        if skill_level not in SKILL_LEVELS:
-            skill_level = "beginner"
+        try:
+            user = self._db.query(UserModels.User).filter(UserModels.User.id == user_id).first()
+            if user:
+                skill_level = user.experience_level or "beginner"
+        except Exception as e:
+                logger.error(f"Error fetching user profile: {e}")
 
         instruments = instruments or ["general"]
         weakness = weakness or "general improvement"
@@ -127,7 +74,7 @@ class EducationGenerator:
         client = self._get_client()
         if client:
             try:
-                response = await self._call_anthropic_lesson(
+                response = await self._get_lesson(
                     topic, skill_level, instruments, weakness,
                     performance_summary, length, include_examples
                 )
@@ -154,10 +101,10 @@ class EducationGenerator:
 
     async def suggest_topics(
         self,
-        skill_level: str,
+        user_id: int,
         instruments: List[str],
         win_rate: float,
-        patterns: List[str],
+        patterns: Optional[List[str]] = None,
         completed_lessons: Optional[List[str]] = None
     ) -> List[TopicSuggestion]:
         """
@@ -173,12 +120,18 @@ class EducationGenerator:
         Returns:
             List of suggested topics ranked by relevance
         """
+        try:
+            user = self._db.query(UserModels.User).filter(UserModels.User.id == user_id).first()
+            if user:
+                skill_level = user.experience_level or "beginner"
+        except Exception as e:
+                logger.error(f"Error fetching user profile: {e}")
         completed_lessons = completed_lessons or []
 
         client = self._get_client()
         if client:
             try:
-                response = await self._call_anthropic_topics(
+                response = await self._get_topics(
                     skill_level, instruments, win_rate, patterns, completed_lessons
                 )
                 return self._parse_topics_response(response)
@@ -188,7 +141,7 @@ class EducationGenerator:
         # Fallback removed
         return []
 
-    async def _call_anthropic_lesson(
+    async def _get_lesson(
         self,
         topic: str,
         skill_level: str,
@@ -198,9 +151,7 @@ class EducationGenerator:
         length: str,
         include_examples: bool
     ) -> str:
-        """Make API call to Anthropic Claude for lesson generation."""
-        import asyncio
-
+        """Make API call to LLM for lesson generation."""
         prompt = LESSON_GENERATION_TEMPLATE.format(
             skill_level=skill_level,
             instruments=", ".join(instruments),
@@ -211,22 +162,15 @@ class EducationGenerator:
             include_examples=str(include_examples).lower()
         )
 
-        def _sync_call():
-            client = self._get_client()
-            response = client.messages.create(
-                model=self.settings.anthropic_model_name,
-                max_tokens=self.settings.anthropic_max_tokens,
-                system=EDUCATION_SYSTEM_PROMPT,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            return response.content[0].text
+        return await self._call_llm(
+            system_prompt=EDUCATION_SYSTEM_PROMPT,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1024
+        )
 
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, _sync_call)
-
-    async def _call_anthropic_topics(
+    async def _get_topics(
         self,
         skill_level: str,
         instruments: List[str],
@@ -234,9 +178,7 @@ class EducationGenerator:
         patterns: List[str],
         completed_lessons: List[str]
     ) -> str:
-        """Make API call to Anthropic Claude for topic suggestions."""
-        import asyncio
-
+        """Make API call to LLM for topic suggestions."""
         prompt = TOPIC_SUGGESTION_TEMPLATE.format(
             skill_level=skill_level,
             instruments=", ".join(instruments) if instruments else "various",
@@ -245,25 +187,18 @@ class EducationGenerator:
             completed_lessons=", ".join(completed_lessons) if completed_lessons else "none"
         )
 
-        def _sync_call():
-            client = self._get_client()
-            response = client.messages.create(
-                model=self.settings.anthropic_model_name,
-                max_tokens=1024,
-                system=EDUCATION_SYSTEM_PROMPT,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            return response.content[0].text
-
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, _sync_call)
+        return await self._call_llm(
+            system_prompt=EDUCATION_SYSTEM_PROMPT,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1024
+        )
 
     def _parse_lesson_response(self, response: str, skill_level: str) -> GeneratedLesson:
-        """Parse the JSON lesson response from Claude."""
+        """Parse the JSON lesson response from LLM."""
         try:
-            # Extract JSON from response (Claude might include markdown)
+            # Extract JSON from response (LLM might include markdown)
             json_start = response.find("{")
             json_end = response.rfind("}") + 1
             if json_start == -1 or json_end == 0:
@@ -332,11 +267,34 @@ class EducationGenerator:
 
 # Factory function for dependency injection
 _education_generator: Optional[EducationGenerator] = None
-
-
 def get_education_generator() -> EducationGenerator:
     """Get the singleton EducationGenerator instance."""
     global _education_generator
     if _education_generator is None:
         _education_generator = EducationGenerator()
     return _education_generator
+
+# Example usage
+if __name__ == "__main__":
+    import asyncio
+
+    async def test_lesson_generation():
+        generator = get_education_generator()
+        lesson = await generator.generate_lesson(
+            user_id=1,
+            topic="Risk Management",
+            instruments=["forex", "commodities"],
+            weakness="overtrading",
+            performance_summary="Recent trades show a tendency to overtrade during volatile markets.",
+            length="medium",
+            include_examples=True
+        )
+        print(lesson)
+        topics = await generator.suggest_topics(
+            user_id=1,
+            instruments=["forex", "commodities"],
+            win_rate=55.0
+        )
+        print(topics)
+
+    asyncio.run(test_lesson_generation())

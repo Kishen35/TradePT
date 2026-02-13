@@ -127,7 +127,7 @@ class InsightGenerator(LLMConnector):
         preferences: Dict[str, Any] = None,
         market_context: str = "Market data not available"
     ) -> str:
-        """Make API call to Claude."""
+        """Make API call to LLM for insights generation."""
         if preferences is None:
             preferences = {}
 
