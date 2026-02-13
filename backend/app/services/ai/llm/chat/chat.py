@@ -150,7 +150,8 @@ class TradingChatBot(LLMConnector):
         if "market_context" not in user_context:
             try:
                 preferred_assets = user_context.get("preferred_assets", [])
-                market_context = await self._deriv_service.get_market_context_safe(preferred_assets)
+                # market_context = await self._deriv_service.get_market_context_safe(preferred_assets)
+                market_context = await self._deriv_service.get_market_context(preferred_assets)
                 user_context["market_context"] = market_context
 
                 # Fetch recent trades from backend API for accuracy

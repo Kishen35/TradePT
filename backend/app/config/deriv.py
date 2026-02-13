@@ -24,5 +24,5 @@ deriv_app_id = 125387                      # Hardcoded for now, should be stored
 
 #     if reconnect:
 #         _deriv_api_instance = DerivAPI(app_id=deriv_app_id)
-    
+
 #     return _deriv_api_instance

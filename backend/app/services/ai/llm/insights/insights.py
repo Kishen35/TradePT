@@ -90,7 +90,10 @@ class InsightGenerator(LLMConnector):
         # Fetch market context from Deriv API
         market_context = "Market data not available"
         try:
-            market_context = await self._deriv_service.get_market_context_safe(
+            # market_context = await self._deriv_service.get_market_context_safe(
+            #     [preferences["preferred_assets"]]
+            # )
+            market_context = await self._deriv_service.get_market_context(
                 [preferences["preferred_assets"]]
             )
         except Exception as e:
