@@ -4,8 +4,35 @@
 class AIIntegration {
     constructor() {
         this.backendUrl = 'http://localhost:8000'; // Update for production
-        this.userId = 1; // Default user ID for now
+        this.userId = this._loadUserIdSync();
         this.sessionId = null;
+        // Also try chrome.storage.local (works on any domain)
+        this._loadUserIdAsync();
+    }
+
+    // Sync load from localStorage (works on same origin)
+    _loadUserIdSync() {
+        try {
+            const raw = localStorage.getItem("user_session") || localStorage.getItem("user_session_data");
+            if (raw) {
+                const session = JSON.parse(raw);
+                if (session && session.id) return session.id;
+            }
+        } catch {}
+        return 1; // Fallback default
+    }
+
+    // Async load from chrome.storage.local (works across all domains)
+    _loadUserIdAsync() {
+        try {
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                chrome.storage.local.get("user_session", (data) => {
+                    if (data.user_session && data.user_session.id) {
+                        this.userId = data.user_session.id;
+                    }
+                });
+            }
+        } catch {}
     }
 
     // Prepare comprehensive context from extension data + Deriv API
@@ -110,6 +137,64 @@ class AIIntegration {
         } catch (error) {
             console.error('AI request failed:', error);
             return "I'm having trouble connecting to the AI service. Please try again.";
+        }
+    }
+
+    // Call Education Analyze API (Buy/Close AI Analysis buttons)
+    async callEducationAnalyze(actionType, context) {
+        try {
+            const payload = {
+                user_id: this.userId,
+                action_type: actionType === "purchase" ? "buy_analysis" : "close_analysis",
+                symbol: context.symbol || context.current_symbol || "Unknown",
+                balance: parseFloat(String(context.balance || 0).replace(/[^0-9.-]/g, "")) || 0,
+                stake: parseFloat(String(context.stake || 0).replace(/[^0-9.-]/g, "")) || null,
+                trade_type: context.trade_type || null,
+                market_type: context.market_type || null,
+                trend_type: context.trend_type || null,
+                parameters: context.parameters || null,
+            };
+
+            if (actionType === "close") {
+                payload.pnl = context.pnl != null ? parseFloat(context.pnl) : null;
+                payload.entry_price = context.entry_price != null ? parseFloat(context.entry_price) : null;
+                payload.current_price = context.current_price != null ? parseFloat(context.current_price) : null;
+                payload.duration_minutes = context.duration_minutes != null ? parseInt(context.duration_minutes, 10) : null;
+            }
+
+            let response;
+            try {
+                response = await fetch(`${this.backendUrl}/education/analyze`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+            } catch (corsError) {
+                response = await this.makeBackgroundRequest(`${this.backendUrl}/education/analyze`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: payload,
+                });
+            }
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Education API failed: ${response.status} - ${errText}`);
+            }
+
+            const result = await response.json();
+            return {
+                text: result.analysis_text || "No analysis available.",
+                recommended_module_id: result.recommended_module_id || null,
+                recommended_module_title: result.recommended_module_title || null,
+            };
+        } catch (error) {
+            console.error("Education analyze failed:", error);
+            return {
+                text: "I'm having trouble connecting to the AI service. Please try again.",
+                recommended_module_id: null,
+                recommended_module_title: null,
+            };
         }
     }
 

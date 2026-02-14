@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal
+from typing import Literal, Optional
 
 class UserCreate(BaseModel):
     name: str
@@ -15,6 +15,9 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+class TraderTypeUpdate(BaseModel):
+    trader_type: Literal["momentum", "precision"]
+
 class UserResponse(BaseModel):
     id: int
     name: str
@@ -24,6 +27,7 @@ class UserResponse(BaseModel):
     risk_tolerance: Literal["cut loss", "wait see", "layering"]
     capital_allocation: Literal["low risk", "medium risk", "high risk"]
     asset_preference: Literal["forex", "commodities", "crypto"]
+    trader_type: Optional[str] = None
 
     class Config:
         from_attributes = True  # SQLAlchemy compatibility

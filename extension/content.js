@@ -10,6 +10,10 @@ const state = {
   recentTrades: [],
   lastTradeDataFetch: 0, // Timestamp of last trade data fetch
   backgroundDataValid: false,
+  tradeType: "",
+  marketType: "",
+  trendType: "unknown",
+  parameters: {},
 };
 
 class Chatbox {
@@ -304,29 +308,42 @@ class Chatbox {
     overlay.style.display = "flex";
 
     try {
-      // Initialize AI integration if not already done
+      // Refresh scraped data before analysis
+      scraper.scrapeContext();
+
       if (!window.aiIntegration) {
         window.aiIntegration = new AIIntegration();
       }
 
-      // Generate contextual AI prompt based on action type
-      let aiPrompt = "";
-      if (type === "close" && state.currentSymbol) {
-        aiPrompt = `Should I close my current position? I have ${state.positions.length} open positions and my current balance is ${state.balance}. My win rate is ${state.winRate}.`;
-      } else if (type === "purchase" && state.currentSymbol) {
-        aiPrompt = `Is now a good time to buy ${state.currentSymbol} with a stake of ${state.stakeAmount}? My current balance is ${state.balance} and my win rate is ${state.winRate}. What's your analysis?`;
-      } else {
-        aiPrompt = `What's your advice on my current trading situation? Balance: ${state.balance}, Win Rate: ${state.winRate}, Stake Amount: ${state.stakeAmount || "Not set"}`;
+      const context = {
+        symbol: state.currentSymbol,
+        balance: state.balance,
+        stake: state.stakeAmount,
+        trade_type: state.tradeType || null,
+        market_type: state.marketType || state.currentSymbol,
+        trend_type: state.trendType || "unknown",
+        parameters: Object.keys(state.parameters || {}).length > 0 ? state.parameters : null,
+      };
+
+      if (type === "close" && state.positions.length > 0) {
+        const pos = state.positions[0];
+        const pnlStr = typeof pos.pnl === "string" ? pos.pnl.replace(/[^0-9.-]/g, "") : pos.pnl;
+        context.pnl = parseFloat(pnlStr) || 0;
+        context.symbol = pos.symbol || state.currentSymbol;
+        context.entry_price = null;
+        context.current_price = null;
+        context.duration_minutes = null;
       }
 
-      // Get AI analysis
-      const aiResponse = await window.aiIntegration.sendMessageToAI(
-        aiPrompt,
-        type === "purchase" ? "trading_action" : "risk_management",
+      const aiResult = await window.aiIntegration.callEducationAnalyze(
+        type,
+        context,
       );
+      const aiText = aiResult.text;
+      const recommendedModuleId = aiResult.recommended_module_id;
 
       // Determine advice status based on AI response
-      const adviceStatus = this.determineAdviceStatus(aiResponse, type);
+      const adviceStatus = this.determineAdviceStatus(aiText, type);
 
       // Update overlay with AI analysis
       overlay.innerHTML = `
@@ -334,7 +351,7 @@ class Chatbox {
                 <div class="overlay-header"><span>AI Trade Assistant</span><button onclick="document.getElementById('ai-decision-overlay').style.display='none'">×</button></div>
                 <div class="overlay-body">
                     <div class="advice-status ${adviceStatus.class}">${adviceStatus.icon} ${adviceStatus.text}</div>
-                    <p class="ai-analysis">${this.formatMessage(aiResponse)}</p>
+                    <p class="ai-analysis">${this.formatMessage(aiText)}</p>
                     <div class="advice-details">
                         <div><strong>Balance:</strong> ${state.balance}</div>
                         <div><strong>Symbol:</strong> ${state.currentSymbol || "Not selected"}</div>
@@ -344,15 +361,18 @@ class Chatbox {
                 </div>
                 <div class="overlay-footer">
                     <button onclick="document.getElementById('ai-decision-overlay').style.display='none'">Got it</button>
-                    <button id="ask-ai-more-btn" style="background: #242828; margin-left: 10px;">Ask AI More</button>
+                    <button id="learn-more-btn" style="background: #242828; margin-left: 10px;">Learn more</button>
                 </div>
             </div>
         `;
 
-      // Set up "Ask AI More" button
-      document.getElementById("ask-ai-more-btn").onclick = () => {
+      // Log analysis to chatbot history
+      this.addMessage("ai", `📊 **AI ${type === "purchase" ? "Buy" : "Close"} Analysis** (${state.currentSymbol || "Unknown"}):\n\n${aiText}`);
+
+      // Set up "Learn more" button — navigate to specific module quiz
+      document.getElementById("learn-more-btn").onclick = () => {
         overlay.style.display = "none";
-        this.openChatWithPrefill(type);
+        this.navigateToEducation(recommendedModuleId);
       };
     } catch (error) {
       console.error("AI analysis failed:", error);
@@ -423,7 +443,50 @@ class Chatbox {
     }
   }
 
-  // 6. Open chat with contextual prefilled message
+  // 6. Navigate to education dashboard (with sign-in check)
+  navigateToEducation(moduleId) {
+    // Use chrome.storage.local (works across all extension contexts/domains)
+    chrome.storage.local.get("user_session", (data) => {
+      const session = data.user_session;
+
+      if (session && session.id) {
+        // User is signed in — open education dashboard with specific module quiz
+        const encoded = btoa(encodeURIComponent(JSON.stringify(session)));
+        let url = `http://localhost:8000/static/trading_edu.html?session=${encoded}`;
+        if (moduleId) url += `&module=${moduleId}`;
+        window.open(url, "_blank");
+      } else {
+        // Not signed in — show sign-in prompt overlay
+        let signInOverlay = document.getElementById("ai-signin-overlay");
+        if (!signInOverlay) {
+          signInOverlay = document.createElement("div");
+          signInOverlay.id = "ai-signin-overlay";
+          document.body.appendChild(signInOverlay);
+        }
+        signInOverlay.innerHTML = `
+          <div class="overlay-content">
+            <div class="overlay-header"><span>Sign In Required</span><button onclick="document.getElementById('ai-signin-overlay').style.display='none'">×</button></div>
+            <div class="overlay-body" style="text-align:center;">
+              <div style="font-size:36px; margin-bottom:12px;">🔐</div>
+              <p>Sign in to access your personalized learning dashboard and track your progress.</p>
+            </div>
+            <div class="overlay-footer" style="justify-content:center; gap:10px;">
+              <button onclick="document.getElementById('ai-signin-overlay').style.display='none'" style="background:#242828;">Cancel</button>
+              <button id="ai-signin-btn" style="background:#ff444f;">Sign In</button>
+            </div>
+          </div>
+        `;
+        signInOverlay.style.display = "flex";
+        document.getElementById("ai-signin-btn").onclick = () => {
+          signInOverlay.style.display = "none";
+          // Open login page in extension popup
+          chrome.runtime.sendMessage({ action: "openPopup" });
+        };
+      }
+    });
+  }
+
+  // 7. Open chat with contextual prefilled message
   openChatWithPrefill(actionType) {
     const trigger = document.getElementById("ai-bubble-trigger");
     const popup = document.getElementById("ai-insights-popup");
@@ -483,6 +546,39 @@ class Scraper {
     if (stakeInput) {
       state.stakeAmount = stakeInput.value;
     }
+
+    // Trade Type (e.g. Accumulators, Multipliers)
+    const tradeTypeEl =
+      document.querySelector('[class*="learn-about"] .dc-text') ||
+      document.querySelector(".trade-type-selector .dc-text") ||
+      document.querySelector('[data-testid*="trade-type"]') ||
+      document.querySelector(".dc-dropdown__display");
+    if (tradeTypeEl) {
+      state.tradeType = tradeTypeEl.innerText?.trim() || "";
+    }
+
+    // Market type = current symbol (e.g. Volatility 100 Index)
+    state.marketType = state.currentSymbol || "";
+
+    // Trend from price change (e.g. +0.641 or -0.62)
+    const priceChangeEl =
+      document.querySelector('[class*="price-change"]') ||
+      document.querySelector('[class*="change--"]') ||
+      document.querySelector(".cq-chart-price__value--profit") ||
+      document.querySelector(".cq-chart-price__value--loss");
+    if (priceChangeEl) {
+      const changeText = priceChangeEl.innerText || "";
+      state.trendType = changeText.includes("-") ? "down" : changeText.includes("+") ? "up" : "sideways";
+    }
+
+    // Parameters (Accumulators: growth rate, take profit)
+    const growthRateEl = document.querySelector('[class*="growth-rate"] .dc-dropdown__display');
+    const takeProfitEl =
+      document.querySelector("#dc_take_profit_input") ||
+      document.querySelector('[class*="take-profit"] input');
+    state.parameters = {};
+    if (growthRateEl) state.parameters.growth_rate = growthRateEl.innerText?.trim();
+    if (takeProfitEl?.value) state.parameters.take_profit = takeProfitEl.value;
 
     // Scrape Live Positions
     this.scrapeLivePositions();
