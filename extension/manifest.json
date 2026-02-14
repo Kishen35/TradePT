@@ -27,7 +27,15 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["icon.png"],
+      "resources": [
+        "trading_edu.html",
+        "trading-styles.css",
+        "favicon.png",
+        "pocketpt-tab.css",
+        "icon.png",
+        "views/*",
+        "js/*"
+      ],
       "matches": ["https://app.deriv.com/*"]
     }
   ]
