@@ -954,12 +954,78 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 });
 
+// --- PocketPT Dashboard Integration ---
+function injectPocketPTTab() {
+  if (document.getElementById('pocketpt-nav-tab')) return;
+
+  const menuLinks = document.querySelector('.header__menu-links');
+  if (!menuLinks) return;
+
+  const tabWrapper = document.createElement('span');
+  tabWrapper.id = 'pocketpt-nav-tab';
+  tabWrapper.className = 'header__menu-link--active__link-wrapper';
+  
+  const tabLink = document.createElement('a');
+  tabLink.className = 'header__menu-link pocketpt-tab';
+  tabLink.href = '#';
+  tabLink.innerHTML = `
+    <span class="dc-text header__menu-link-text" title="PocketPT">
+      <span class="pocketpt-tab-icon">Pocket<span style="color:#ff444f">PT</span></span>
+    </span>
+  `;
+
+  tabLink.onclick = (e) => {
+    e.preventDefault();
+    togglePocketPTDashboard();
+  };
+
+  tabWrapper.appendChild(tabLink);
+  const reportsTab = document.getElementById('dt_reports_tab');
+  if (reportsTab && reportsTab.parentElement) {
+    menuLinks.insertBefore(tabWrapper, reportsTab.parentElement);
+  } else {
+    menuLinks.appendChild(tabWrapper);
+  }
+}
+
+function togglePocketPTDashboard() {
+  let iframe = document.getElementById('pocketpt-dashboard-overlay');
+  const tab = document.querySelector('.pocketpt-tab');
+  
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.id = 'pocketpt-dashboard-overlay';
+    iframe.src = chrome.runtime.getURL('trading_edu.html');
+    document.body.appendChild(iframe);
+  }
+
+  const isVisible = iframe.style.display === 'block';
+  iframe.style.display = isVisible ? 'none' : 'block';
+  
+  if (tab) {
+    if (!isVisible) {
+      tab.classList.add('active');
+      document.querySelectorAll('.header__menu-link').forEach(el => {
+        if (el !== tab) el.parentElement.classList.remove('header__menu-link--active__link-wrapper');
+      });
+    } else {
+      tab.classList.remove('active');
+      if (window.location.href.includes('/reports')) {
+        const reportsTab = document.getElementById('dt_reports_tab');
+        if (reportsTab) reportsTab.parentElement.classList.add('header__menu-link--active__link-wrapper');
+      }
+    }
+  }
+}
+
 // Init
 function init() {
   // Load any persisted data first
   updater.loadPersistedData();
 
   chatbot.injectFloatingBubble();
+
+  injectPocketPTTab();
 
   // Main scraping interval (every 6 seconds)
   setInterval(() => {
