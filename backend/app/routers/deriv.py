@@ -22,6 +22,13 @@ async def get_deriv_exchange_rates(base_currency: str = "USD"):
     api = get_deriv_service()
     return await api.get_exchange_rates(base_currency)
 
+# Get Deriv trades
+@router.get("/trades")
+async def get_deriv_trades(amount: int = 5):
+    api = get_deriv_service()
+    return await api.get_recent_trades(amount)
+
+
 # Get Deriv asset indexes
 # @router.get("/asset-indexes")
 # async def get_deriv_asset_indexes():
