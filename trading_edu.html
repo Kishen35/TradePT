@@ -679,6 +679,43 @@ select.field-input option { background: var(--bg); }
   font-family: var(--font-mono);
 }
 .xp-label { font-size: 11px; color: var(--txt-muted); }
+
+/* ══════════════════════════════════════
+   LEADERBOARD
+══════════════════════════════════════ */
+.leaderboard-card { overflow: hidden; }
+.leaderboard-list { display: flex; flex-direction: column; }
+.lb-item {
+  display: flex; align-items: center; padding: 12px 16px;
+  border-bottom: 1px solid var(--border-divider); transition: background 0.15s;
+}
+.lb-item:last-child { border-bottom: none; }
+.lb-item.me { background: var(--red-light); }
+.lb-rank {
+  width: 32px; font-family: var(--font-mono); font-weight: 700;
+  font-size: 14px; color: var(--txt-muted);
+}
+.lb-rank.top-1 { color: #FFD700; font-size: 18px; }
+.lb-rank.top-2 { color: #C0C0C0; font-size: 16px; }
+.lb-rank.top-3 { color: #CD7F32; font-size: 15px; }
+.lb-user { display: flex; align-items: center; gap: 12px; flex: 1; }
+.lb-av {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px; color: var(--txt-prominent);
+}
+.lb-name { font-weight: 600; color: var(--txt-prominent); font-size: 13px; }
+.lb-name .me-tag {
+  font-size: 9px; background: var(--red); color: #fff;
+  padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle;
+}
+.lb-stats { display: flex; gap: 24px; align-items: center; }
+.lb-stat { display: flex; flex-direction: column; align-items: flex-end; }
+.lb-stat-label { font-size: 9px; color: var(--txt-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.lb-stat-val { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.lb-stat-val.xp { color: var(--red); }
+.lb-stat-val.streak { color: var(--warning); }
 </style>
 </head>
 <body>
@@ -694,6 +731,7 @@ select.field-input option { background: var(--bg); }
     <button class="nav-tab" onclick="switchTab('scenarios')">Scenarios</button>
     <button class="nav-tab" onclick="switchTab('tutor')">AI Tutor</button>
     <button class="nav-tab" onclick="switchTab('autopsy')">Trade Autopsy</button>
+    <button class="nav-tab" onclick="switchTab('leaderboard')">Leaderboard</button>
   </div>
   <div class="nav-right">
     <div class="streak-chip">🔥 <strong id="streakCount">3</strong>d</div>
@@ -1038,6 +1076,83 @@ select.field-input option { background: var(--bg); }
   </div>
 </div>
 
+<!-- ════════════════════════════════════════
+     LEADERBOARD TAB
+════════════════════════════════════════ -->
+<div id="tab-leaderboard" class="tab-page">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>Global Ranking</div>
+    <h1>Top <em>Performers</em></h1>
+    <p>See how you stack up against other traders. Rankings are based on total XP earned from lessons and scenarios.</p>
+  </div>
+  <div class="main-content">
+    <div class="dc-card leaderboard-card">
+      <div class="leaderboard-list">
+        <!-- Top 1 -->
+        <div class="lb-item">
+          <div class="lb-rank top-1">1</div>
+          <div class="lb-user">
+            <div class="lb-av" style="background:#fff7e6;border-color:#ffd700">JD</div>
+            <div class="lb-name">JohnDoe_Trader</div>
+          </div>
+          <div class="lb-stats">
+            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 42d</div></div>
+            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">12,450</div></div>
+          </div>
+        </div>
+        <!-- Top 2 -->
+        <div class="lb-item">
+          <div class="lb-rank top-2">2</div>
+          <div class="lb-user">
+            <div class="lb-av">SM</div>
+            <div class="lb-name">SarahMarketMaster</div>
+          </div>
+          <div class="lb-stats">
+            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 15d</div></div>
+            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">9,820</div></div>
+          </div>
+        </div>
+        <!-- Top 3 -->
+        <div class="lb-item">
+          <div class="lb-rank top-3">3</div>
+          <div class="lb-user">
+            <div class="lb-av">VK</div>
+            <div class="lb-name">V75_King</div>
+          </div>
+          <div class="lb-stats">
+            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 8d</div></div>
+            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">8,150</div></div>
+          </div>
+        </div>
+        <!-- Me -->
+        <div class="lb-item me">
+          <div class="lb-rank">14</div>
+          <div class="lb-user">
+            <div class="lb-av" style="background:var(--red);color:#fff;border-color:var(--red-hover)">YOU</div>
+            <div class="lb-name">You <span class="me-tag">YOU</span></div>
+          </div>
+          <div class="lb-stats">
+            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 3d</div></div>
+            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">240</div></div>
+          </div>
+        </div>
+        <!-- Others -->
+        <div class="lb-item">
+          <div class="lb-rank">15</div>
+          <div class="lb-user">
+            <div class="lb-av">BS</div>
+            <div class="lb-name">BullishSam</div>
+          </div>
+          <div class="lb-stats">
+            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 1d</div></div>
+            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">210</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /.app -->
 
 <!-- XP Toast -->
@@ -1059,7 +1174,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  const idx = ['learn','scenarios','tutor','autopsy'].indexOf(tab);
+  const idx = ['learn','scenarios','tutor','autopsy','leaderboard'].indexOf(tab);
   document.querySelectorAll('.nav-tab')[idx]?.classList.add('active');
   if (tab === 'scenarios') loadScenario(currentScenario);
 }
