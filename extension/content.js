@@ -969,7 +969,8 @@ function injectPocketPTTab() {
 
   const tabWrapper = document.createElement('span');
   tabWrapper.id = 'pocketpt-nav-tab';
-  tabWrapper.className = 'header__menu-link--active__link-wrapper';
+  // Initially no active wrapper unless it's the active view
+  tabWrapper.className = '';
 
   const tabLink = document.createElement('a');
   tabLink.className = 'header__menu-link pocketpt-tab';
@@ -982,7 +983,8 @@ function injectPocketPTTab() {
 
   tabLink.onclick = (e) => {
     e.preventDefault();
-    togglePocketPTDashboard();
+    e.stopPropagation();
+    togglePocketPTDashboard(true);
   };
 
   tabWrapper.appendChild(tabLink);
@@ -992,69 +994,86 @@ function injectPocketPTTab() {
   } else {
     menuLinks.appendChild(tabWrapper);
   }
+
+  // Add listeners to other tabs to hide PocketPT when clicked
+  menuLinks.querySelectorAll('a').forEach(link => {
+    if (!link.classList.contains('pocketpt-tab')) {
+      link.addEventListener('click', () => togglePocketPTDashboard(false));
+    }
+  });
+
+  // Also listen to the parent items/containers for clicks that might trigger dropdowns
+  menuLinks.querySelectorAll('.header__menu-link-wrapper').forEach(wrapper => {
+    if (!wrapper.contains(document.querySelector('.pocketpt-tab'))) {
+      wrapper.addEventListener('click', () => togglePocketPTDashboard(false));
+    }
+  });
+
+  // Listen for logo/hub clicks outside the menu links
+  const hubLogo = document.querySelector('.header__logo-wrapper') || document.querySelector('.header__menu-item--logo') || document.querySelector('.header__menu-item');
+  if (hubLogo) {
+    hubLogo.addEventListener('click', () => togglePocketPTDashboard(false));
+  }
+
+  // Detect clicks on the main header area to hide dashboard
+  const header = document.querySelector('header');
+  if (header) {
+    header.addEventListener('click', (e) => {
+      if (!e.target.closest('#pocketpt-nav-tab')) {
+        togglePocketPTDashboard(false);
+      }
+    });
+  }
 }
 
-function togglePocketPTDashboard() {
+function togglePocketPTDashboard(show) {
   let iframe = document.getElementById('pocketpt-dashboard-overlay');
-  let backBtn = document.getElementById('pocketpt-back-btn');
+  const tabWrapper = document.getElementById('pocketpt-nav-tab');
   const tab = document.querySelector('.pocketpt-tab');
 
-  if (!iframe) {
-    // Create iframe
-    iframe = document.createElement('iframe');
-    iframe.id = 'pocketpt-dashboard-overlay';
-    iframe.src = chrome.runtime.getURL('views/trading_edu.html');
+  if (show) {
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'pocketpt-dashboard-overlay';
+      iframe.src = chrome.runtime.getURL('views/trading_edu.html');
+      Object.assign(iframe.style, {
+        position: 'fixed',
+        top: '48px',
+        left: '0',
+        width: '100vw',
+        height: 'calc(100vh - 48px)',
+        border: 'none',
+        zIndex: '99', // Significantly lowered to stay behind Deriv's dropdowns (usually 100-1000+)
+        background: '#f2f3f4',
+        display: 'block'
+      });
+      document.body.appendChild(iframe);
+    } else {
+      iframe.style.display = 'block';
+    }
 
-    // FULL SCREEN STYLE
-    Object.assign(iframe.style, {
-      position: 'fixed',
-      top: '48px',
-      left: '0',
-      width: '100vw',
-      height: 'calc(100vh - 48px - 36px)', // ✅ spaces added
-      border: 'none',
-      zIndex: '999999',
-      background: '#fff',
-      display: 'block'
-    });
-
-    document.body.appendChild(iframe);
-
-    // Create Back Button
-    backBtn = document.createElement('button');
-    backBtn.id = 'pocketpt-back-btn';
-    backBtn.innerText = '← Back';
-
-    Object.assign(backBtn.style, {
-      position: 'fixed',
-      bottom: '50px',
-      left: '20px',
-      zIndex: '1000000',
-      padding: '10px 16px',
-      fontSize: '14px',
-      cursor: 'pointer',
-      borderRadius: '6px',
-      border: 'none',
-      background: '#000',
-      color: '#fff'
-    });
-
-    backBtn.onclick = () => {
-      iframe.remove();
-      backBtn.remove();
-
-      if (tab) tab.classList.remove('active');
-    };
-
-    document.body.appendChild(backBtn);
-
+    // Set active state
+    if (tabWrapper) tabWrapper.className = 'header__menu-link--active__link-wrapper';
     if (tab) tab.classList.add('active');
 
+    // Remove active state from other tabs
+    const menuLinks = document.querySelector('.header__menu-links');
+    if (menuLinks) {
+      menuLinks.querySelectorAll('.header__menu-link--active__link-wrapper').forEach(wrapper => {
+        if (wrapper.id !== 'pocketpt-nav-tab') {
+          wrapper.className = '';
+        }
+      });
+    }
   } else {
-    // If already exists, remove both
-    iframe.remove();
-    if (backBtn) backBtn.remove();
+    // Hide iframe
+    if (iframe) iframe.style.display = 'none';
+    
+    // Remove active state
+    if (tabWrapper) tabWrapper.className = '';
     if (tab) tab.classList.remove('active');
+    
+    // Note: Deriv's own routing will naturally set the other tabs to active when clicked
   }
 }
 
@@ -1126,10 +1145,16 @@ function init() {
 
   injectPocketPTTab();
 
+  // Listen for browser back/forward navigation
+  window.addEventListener('popstate', () => {
+    togglePocketPTDashboard(false);
+  });
+
   // Main scraping interval (every 6 seconds)
   setInterval(() => {
     scraper.scrapeContext();
     chatbot.injectInlineButtons();
+    injectPocketPTTab(); // Ensure tab stays there during SPA navigation
   }, 6000); // 6 seconds
 
   // Background data fetcher (every 30 seconds)
