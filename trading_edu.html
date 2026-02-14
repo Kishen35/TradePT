@@ -681,41 +681,129 @@ select.field-input option { background: var(--bg); }
 .xp-label { font-size: 11px; color: var(--txt-muted); }
 
 /* ══════════════════════════════════════
-   LEADERBOARD
+   LEADERBOARD (Duolingo/LoL Refined)
 ══════════════════════════════════════ */
-.leaderboard-card { overflow: hidden; }
-.leaderboard-list { display: flex; flex-direction: column; }
+.leaderboard-grid {
+  display: grid; grid-template-columns: 320px 1fr; gap: 24px;
+  align-items: flex-start;
+}
+@media (max-width: 900px) { .leaderboard-grid { grid-template-columns: 1fr; } }
+
+/* Streak Card (Left) */
+.streak-card-full {
+  background: #ff9600; border-radius: 16px; padding: 24px;
+  color: #fff; position: relative; overflow: hidden;
+  box-shadow: 0 4px 0 #e68700; margin-bottom: 20px;
+}
+.streak-society {
+  display: inline-block; background: rgba(255,255,255,0.2);
+  padding: 3px 8px; border-radius: 6px; font-size: 10px;
+  font-weight: 800; text-transform: uppercase; margin-bottom: 12px;
+}
+.streak-main-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.streak-val-big { font-size: 48px; font-weight: 800; line-height: 1; }
+.streak-label-big { font-size: 16px; font-weight: 600; margin-top: 4px; opacity: 0.9; }
+.streak-flame-icon { font-size: 60px; line-height: 1; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
+.streak-info-banner {
+  margin-top: 20px; background: #fff; border-radius: 12px; padding: 12px;
+  display: flex; align-items: center; gap: 12px; color: var(--txt);
+}
+.streak-info-icon { font-size: 20px; }
+.streak-info-text { font-size: 11px; line-height: 1.4; font-weight: 500; }
+
+/* Calendar Card (Left) */
+.calendar-card {
+  background: #fff; border: 2px solid var(--border-divider);
+  border-radius: 16px; padding: 20px;
+}
+.cal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px; font-weight: 700; font-size: 13px; color: #4b4b4b;
+}
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cal-day-label { font-size: 10px; color: #afafaf; font-weight: 700; margin-bottom: 8px; }
+.cal-date {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #4b4b4b; border-radius: 50%;
+}
+.cal-date.active { background: #ff9600; color: #fff; }
+.cal-date.range { background: #ff9600; color: #fff; border-radius: 0; width: 100%; }
+.cal-date.range-start { border-radius: 50% 0 0 50%; }
+.cal-date.range-end { border-radius: 0 50% 50% 0%; }
+
+/* League Header & Tiers (Right) */
+.league-tiers-card {
+  background: #0a0e15; border-radius: 12px; padding: 20px;
+  color: #fff; margin-bottom: 24px; border: 1px solid #1e2328;
+}
+.tiers-title {
+  font-size: 11px; font-weight: 800; color: #c8aa6e;
+  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;
+  border-bottom: 1px solid #1e2328; padding-bottom: 8px;
+}
+.tiers-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+}
+.tier-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.tier-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #1e2328; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; border: 1px solid #3c3c41;
+}
+.tier-name { font-size: 9px; font-weight: 700; color: #a0a0a0; }
+.tier-item.active .tier-icon { border-color: #c8aa6e; box-shadow: 0 0 10px rgba(200,170,110,0.3); }
+.tier-item.active .tier-name { color: #fff; }
+
+.leaderboard-league-header {
+  background: var(--bg); padding: 24px;
+  display: flex; flex-direction: column; align-items: center;
+  border: 2px solid var(--border-divider);
+  margin-bottom: 16px; border-radius: 16px;
+}
+.league-visuals { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
+.league-gem { width: 32px; height: 32px; border-radius: 8px; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; }
+.gem-pink { background: #ffb3d9; }
+.gem-dark { background: #4a4a4a; }
+.gem-main { width: 50px; height: 50px; background: #e0f7f9; border: 3px solid #b2ebf2; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+
+.league-title-sub { font-size: 12px; color: var(--txt-muted); font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
+.league-title-main { font-size: 24px; font-weight: 800; color: var(--txt-prominent); letter-spacing: -0.5px; }
+
+.leaderboard-list-card {
+  background: var(--bg); border: 2px solid var(--border-divider); border-radius: 16px; overflow: hidden;
+}
 .lb-item {
-  display: flex; align-items: center; padding: 12px 16px;
+  display: flex; align-items: center; padding: 12px 24px;
   border-bottom: 1px solid var(--border-divider); transition: background 0.15s;
 }
 .lb-item:last-child { border-bottom: none; }
-.lb-item.me { background: var(--red-light); }
-.lb-rank {
-  width: 32px; font-family: var(--font-mono); font-weight: 700;
-  font-size: 14px; color: var(--txt-muted);
-}
-.lb-rank.top-1 { color: #FFD700; font-size: 18px; }
-.lb-rank.top-2 { color: #C0C0C0; font-size: 16px; }
-.lb-rank.top-3 { color: #CD7F32; font-size: 15px; }
-.lb-user { display: flex; align-items: center; gap: 12px; flex: 1; }
-.lb-av {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: var(--surface); border: 1px solid var(--border);
+.lb-item.me { background: #e5ffcc; }
+.lb-rank-box { width: 40px; display: flex; justify-content: center; margin-right: 12px; }
+
+.medal {
+  width: 28px; height: 32px; position: relative;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 12px; color: var(--txt-prominent);
+  font-weight: 800; font-size: 14px; color: #fff;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 85%, 0% 100%);
 }
-.lb-name { font-weight: 600; color: var(--txt-prominent); font-size: 13px; }
-.lb-name .me-tag {
-  font-size: 9px; background: var(--red); color: #fff;
-  padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle;
+.medal-1 { background: #ffce1f; border-bottom: 2px solid #e5b800; }
+.medal-2 { background: #d0d0d0; border-bottom: 2px solid #b0b0b0; }
+.medal-3 { background: #e69a55; border-bottom: 2px solid #c57b3a; }
+.rank-num-flat { font-family: var(--font-mono); font-weight: 700; color: #afafaf; font-size: 16px; }
+
+.lb-av-circle {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; margin-right: 16px;
+  background: var(--surface);
 }
-.lb-stats { display: flex; gap: 24px; align-items: center; }
-.lb-stat { display: flex; flex-direction: column; align-items: flex-end; }
-.lb-stat-label { font-size: 9px; color: var(--txt-muted); text-transform: uppercase; letter-spacing: 0.3px; }
-.lb-stat-val { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
-.lb-stat-val.xp { color: var(--red); }
-.lb-stat-val.streak { color: var(--warning); }
+
+.lb-name-col { flex: 1; display: flex; align-items: center; }
+.lb-name-bold { font-weight: 700; font-size: 15px; color: #4b4b4b; }
+.lb-xp-col { font-family: var(--font-mono); font-weight: 700; font-size: 15px; color: #777; text-align: right; }
+.lb-item.me .lb-name-bold { color: #58a700; }
+.lb-item.me .lb-xp-col { color: #58a700; }
 </style>
 </head>
 <body>
@@ -1083,73 +1171,118 @@ select.field-input option { background: var(--bg); }
   <div class="page-header">
     <div class="page-tag"><div class="live-dot-tag"></div>Global Ranking</div>
     <h1>Top <em>Performers</em></h1>
-    <p>See how you stack up against other traders. Rankings are based on total XP earned from lessons and scenarios.</p>
+    <p>Rankings are based on total XP earned from lessons and scenarios. Keep trading to climb the ranks!</p>
   </div>
   <div class="main-content">
-    <div class="dc-card leaderboard-card">
-      <div class="leaderboard-list">
-        <!-- Top 1 -->
-        <div class="lb-item">
-          <div class="lb-rank top-1">1</div>
-          <div class="lb-user">
-            <div class="lb-av" style="background:#fff7e6;border-color:#ffd700">JD</div>
-            <div class="lb-name">JohnDoe_Trader</div>
+    
+    <div class="leaderboard-grid">
+      
+      <!-- LEFT COLUMN: STREAK -->
+      <div class="leaderboard-left">
+        <div class="streak-card-full">
+          <div class="streak-society">Streak Society</div>
+          <div class="streak-main-row">
+            <div>
+              <div class="streak-val-big">1037</div>
+              <div class="streak-label-big">day streak!</div>
+            </div>
+            <div class="streak-flame-icon">🔥</div>
           </div>
-          <div class="lb-stats">
-            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 42d</div></div>
-            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">12,450</div></div>
-          </div>
-        </div>
-        <!-- Top 2 -->
-        <div class="lb-item">
-          <div class="lb-rank top-2">2</div>
-          <div class="lb-user">
-            <div class="lb-av">SM</div>
-            <div class="lb-name">SarahMarketMaster</div>
-          </div>
-          <div class="lb-stats">
-            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 15d</div></div>
-            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">9,820</div></div>
+          <div class="streak-info-banner">
+            <div class="streak-info-icon">☀️</div>
+            <div class="streak-info-text">You've extended your streak 2 times before noon this week!</div>
           </div>
         </div>
-        <!-- Top 3 -->
-        <div class="lb-item">
-          <div class="lb-rank top-3">3</div>
-          <div class="lb-user">
-            <div class="lb-av">VK</div>
-            <div class="lb-name">V75_King</div>
+
+        <div class="calendar-card">
+          <div class="cal-header">
+            <span>&lt;</span>
+            <span>March 2024</span>
+            <span>&gt;</span>
           </div>
-          <div class="lb-stats">
-            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 8d</div></div>
-            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">8,150</div></div>
-          </div>
-        </div>
-        <!-- Me -->
-        <div class="lb-item me">
-          <div class="lb-rank">14</div>
-          <div class="lb-user">
-            <div class="lb-av" style="background:var(--red);color:#fff;border-color:var(--red-hover)">YOU</div>
-            <div class="lb-name">You <span class="me-tag">YOU</span></div>
-          </div>
-          <div class="lb-stats">
-            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 3d</div></div>
-            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">240</div></div>
-          </div>
-        </div>
-        <!-- Others -->
-        <div class="lb-item">
-          <div class="lb-rank">15</div>
-          <div class="lb-user">
-            <div class="lb-av">BS</div>
-            <div class="lb-name">BullishSam</div>
-          </div>
-          <div class="lb-stats">
-            <div class="lb-stat"><div class="lb-stat-label">Streak</div><div class="lb-stat-val streak">🔥 1d</div></div>
-            <div class="lb-stat"><div class="lb-stat-label">Total XP</div><div class="lb-stat-val xp">210</div></div>
+          <div class="cal-grid">
+            <div class="cal-day-label">Su</div><div class="cal-day-label">Mo</div><div class="cal-day-label">Tu</div><div class="cal-day-label">We</div><div class="cal-day-label">Th</div><div class="cal-day-label">Fr</div><div class="cal-day-label">Sa</div>
+            
+            <div class="cal-date"></div><div class="cal-date"></div><div class="cal-date"></div><div class="cal-date"></div><div class="cal-date"></div><div class="cal-date active range-start">1</div><div class="cal-date active range-end">2</div>
+            
+            <div class="cal-date active range-start">3</div><div class="cal-date active range">4</div><div class="cal-date active range">5</div><div class="cal-date active range">6</div><div class="cal-date active range">7</div><div class="cal-date active range">8</div><div class="cal-date active range-end">9</div>
+            
+            <div class="cal-date active range-start">10</div><div class="cal-date active range">11</div><div class="cal-date active range">12</div><div class="cal-date active range">13</div><div class="cal-date active range">14</div><div class="cal-date active range">15</div><div class="cal-date active range-end">16</div>
+            
+            <div class="cal-date active range-start">17</div><div class="cal-date active range">18</div><div class="cal-date active range">19</div><div class="cal-date active range">20</div><div class="cal-date active range">21</div><div class="cal-date active range">22</div><div class="cal-date active range-end">23</div>
+            
+            <div class="cal-date">24</div><div class="cal-date active">25</div><div class="cal-date active">26</div><div class="cal-date">27</div><div class="cal-date">28</div><div class="cal-date">29</div><div class="cal-date">30</div>
+            
+            <div class="cal-date">31</div>
           </div>
         </div>
       </div>
+
+      <!-- RIGHT COLUMN: LEAGUE & LIST -->
+      <div class="leaderboard-right">
+        
+        <div class="leaderboard-league-header">
+          <div class="league-visuals">
+            <div class="league-gem gem-pink"></div>
+            <div class="league-gem gem-dark"></div>
+            <div class="league-gem gem-main">💎</div>
+          </div>
+          <div class="league-title-sub">MY CURRENT LEAGUE</div>
+          <div class="league-title-main">Diamond League</div>
+        </div>
+
+        <div class="league-tiers-card">
+          <div class="tiers-title">Tiers</div>
+          <div class="tiers-grid">
+            <div class="tier-item"><div class="tier-icon">⚙️</div><div class="tier-name">Iron</div></div>
+            <div class="tier-item"><div class="tier-icon">🥉</div><div class="tier-name">Bronze</div></div>
+            <div class="tier-item"><div class="tier-icon">🥈</div><div class="tier-name">Silver</div></div>
+            <div class="tier-item"><div class="tier-icon">🥇</div><div class="tier-name">Gold</div></div>
+            <div class="tier-item"><div class="tier-icon">💠</div><div class="tier-name">Platinum</div></div>
+            <div class="tier-item"><div class="tier-icon">🍀</div><div class="tier-name">Emerald</div></div>
+            <div class="tier-item active"><div class="tier-icon">💎</div><div class="tier-name">Diamond</div></div>
+            <div class="tier-item"><div class="tier-icon">🔮</div><div class="tier-name">Master</div></div>
+            <div class="tier-item"><div class="tier-icon">🔴</div><div class="tier-name">Grandmaster</div></div>
+            <div class="tier-item"><div class="tier-icon">👑</div><div class="tier-name">Challenger</div></div>
+          </div>
+        </div>
+
+        <div class="leaderboard-list-card">
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><div class="medal medal-1">1</div></div></div>
+            <div class="lb-av-circle" style="background:#ffedcc">👤</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Jason</div></div>
+            <div class="lb-xp-col">597 XP</div>
+          </div>
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><div class="medal medal-2">2</div></div></div>
+            <div class="lb-av-circle" style="background:#e0f2ff">👷</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Cindy</div></div>
+            <div class="lb-xp-col">252 XP</div>
+          </div>
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><div class="medal medal-3">3</div></div></div>
+            <div class="lb-av-circle" style="background:#f9ebea">👩‍🎨</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Ashley</div></div>
+            <div class="lb-xp-col">224 XP</div>
+          </div>
+          <div class="lb-item me">
+            <div class="lb-rank-num"><div class="lb-rank-box"><span class="rank-num-flat">4</span></div></div>
+            <div class="lb-av-circle" style="background:var(--red);color:#fff">YOU</div>
+            <div class="lb-name-col"><div class="lb-name-bold">You</div></div>
+            <div class="lb-xp-col">240 XP</div>
+          </div>
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><span class="rank-num-flat">5</span></div></div>
+            <div class="lb-av-circle" style="background:#e8f8f5">👲</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Sergio</div></div>
+            <div class="lb-xp-col">156 XP</div>
+          </div>
+        </div>
+
+      </div>
     </div>
+
   </div>
 </div>
 
