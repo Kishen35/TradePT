@@ -37,4 +37,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-console.log("TradePT Background Script Loaded");
+console.log("PocketPT Background Script Loaded");

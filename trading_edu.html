@@ -22,6 +22,7 @@
     <button class="nav-tab" onclick="switchTab('scenarios')">Scenarios</button>
     <button class="nav-tab" onclick="switchTab('tutor')">AI Tutor</button>
     <button class="nav-tab" onclick="switchTab('autopsy')">Trade Autopsy</button>
+    <button class="nav-tab" onclick="switchTab('leaderboard')">Leaderboard</button>
   </div>
   <div class="nav-right">
     <div class="streak-chip">🔥 <strong id="streakCount">3</strong>d</div>
@@ -366,6 +367,128 @@
   </div>
 </div>
 
+<!-- ════════════════════════════════════════
+     LEADERBOARD TAB
+════════════════════════════════════════ -->
+<div id="tab-leaderboard" class="tab-page">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>Global Ranking</div>
+    <h1>Top <em>Performers</em></h1>
+    <p>Rankings are based on total XP earned from lessons and scenarios. Keep trading to climb the ranks!</p>
+  </div>
+  <div class="main-content">
+    
+    <div class="leaderboard-grid">
+      
+      <!-- LEFT COLUMN: STREAK -->
+      <div class="leaderboard-left">
+        <div class="streak-card-full">
+          <div class="streak-society">Streak Society</div>
+          <div class="streak-main-row">
+            <div>
+              <div class="streak-val-big">1037</div>
+              <div class="streak-label-big">day streak!</div>
+            </div>
+            <div class="streak-flame-icon">🔥</div>
+          </div>
+          <div class="streak-info-banner">
+            <div class="streak-info-icon">☀️</div>
+            <div class="streak-info-text">You've extended your streak 2 times before noon this week!</div>
+          </div>
+        </div>
+
+        <div class="calendar-card">
+          <div class="cal-header">
+            <span>&lt;</span>
+            <span>March 2024</span>
+            <span>&gt;</span>
+          </div>
+          <div class="cal-grid">
+            <div class="cal-day-label">Su</div><div class="cal-day-label">Mo</div><div class="cal-day-label">Tu</div><div class="cal-day-label">We</div><div class="cal-day-label">Th</div><div class="cal-day-label">Fr</div><div class="cal-day-label">Sa</div>
+            
+            <div class="cal-date"></div><div class="cal-date"></div><div class="cal-date"></div><div class="cal-date"></div><div class="cal-date"></div><div class="cal-date active range-start">1</div><div class="cal-date active range-end">2</div>
+            
+            <div class="cal-date active range-start">3</div><div class="cal-date active range">4</div><div class="cal-date active range">5</div><div class="cal-date active range">6</div><div class="cal-date active range">7</div><div class="cal-date active range">8</div><div class="cal-date active range-end">9</div>
+            
+            <div class="cal-date active range-start">10</div><div class="cal-date active range">11</div><div class="cal-date active range">12</div><div class="cal-date active range">13</div><div class="cal-date active range">14</div><div class="cal-date active range">15</div><div class="cal-date active range-end">16</div>
+            
+            <div class="cal-date active range-start">17</div><div class="cal-date active range">18</div><div class="cal-date active range">19</div><div class="cal-date active range">20</div><div class="cal-date active range">21</div><div class="cal-date active range">22</div><div class="cal-date active range-end">23</div>
+            
+            <div class="cal-date">24</div><div class="cal-date active">25</div><div class="cal-date active">26</div><div class="cal-date">27</div><div class="cal-date">28</div><div class="cal-date">29</div><div class="cal-date">30</div>
+            
+            <div class="cal-date">31</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: LEAGUE & LIST -->
+      <div class="leaderboard-right">
+        
+        <div class="leaderboard-league-header">
+          <div class="league-visuals">
+            <div class="league-gem gem-pink"></div>
+            <div class="league-gem gem-dark"></div>
+            <div class="league-gem gem-main">💎</div>
+          </div>
+          <div class="league-title-sub">MY CURRENT LEAGUE</div>
+          <div class="league-title-main">Diamond League</div>
+        </div>
+
+        <div class="league-tiers-card">
+          <div class="tiers-title">Tiers</div>
+          <div class="tiers-grid">
+            <div class="tier-item"><div class="tier-icon">⚙️</div><div class="tier-name">Iron</div></div>
+            <div class="tier-item"><div class="tier-icon">🥉</div><div class="tier-name">Bronze</div></div>
+            <div class="tier-item"><div class="tier-icon">🥈</div><div class="tier-name">Silver</div></div>
+            <div class="tier-item"><div class="tier-icon">🥇</div><div class="tier-name">Gold</div></div>
+            <div class="tier-item"><div class="tier-icon">💠</div><div class="tier-name">Platinum</div></div>
+            <div class="tier-item"><div class="tier-icon">🍀</div><div class="tier-name">Emerald</div></div>
+            <div class="tier-item active"><div class="tier-icon">💎</div><div class="tier-name">Diamond</div></div>
+            <div class="tier-item"><div class="tier-icon">🔮</div><div class="tier-name">Master</div></div>
+            <div class="tier-item"><div class="tier-icon">🔴</div><div class="tier-name">Grandmaster</div></div>
+            <div class="tier-item"><div class="tier-icon">👑</div><div class="tier-name">Challenger</div></div>
+          </div>
+        </div>
+
+        <div class="leaderboard-list-card">
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><div class="medal medal-1">1</div></div></div>
+            <div class="lb-av-circle" style="background:#ffedcc">👤</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Jason</div></div>
+            <div class="lb-xp-col">597 XP</div>
+          </div>
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><div class="medal medal-2">2</div></div></div>
+            <div class="lb-av-circle" style="background:#e0f2ff">👷</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Cindy</div></div>
+            <div class="lb-xp-col">252 XP</div>
+          </div>
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><div class="medal medal-3">3</div></div></div>
+            <div class="lb-av-circle" style="background:#f9ebea">👩‍🎨</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Ashley</div></div>
+            <div class="lb-xp-col">224 XP</div>
+          </div>
+          <div class="lb-item me">
+            <div class="lb-rank-num"><div class="lb-rank-box"><span class="rank-num-flat">4</span></div></div>
+            <div class="lb-av-circle" style="background:var(--red);color:#fff">YOU</div>
+            <div class="lb-name-col"><div class="lb-name-bold">You</div></div>
+            <div class="lb-xp-col">240 XP</div>
+          </div>
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><span class="rank-num-flat">5</span></div></div>
+            <div class="lb-av-circle" style="background:#e8f8f5">👲</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Sergio</div></div>
+            <div class="lb-xp-col">156 XP</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
 </div><!-- /.app -->
 
 <!-- XP Toast -->
@@ -387,7 +510,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  const idx = ['learn','scenarios','tutor','autopsy'].indexOf(tab);
+  const idx = ['learn','scenarios','tutor','autopsy','leaderboard'].indexOf(tab);
   document.querySelectorAll('.nav-tab')[idx]?.classList.add('active');
   if (tab === 'scenarios') loadScenario(currentScenario);
 }
