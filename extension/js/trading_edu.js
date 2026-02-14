@@ -1,3 +1,24 @@
+const BACKEND_URL = "http://localhost:8000";
+
+// Get user session — check URL param first (passed from extension), then localStorage
+function getUserSession() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const encoded = params.get('session');
+        if (encoded) {
+            const decoded = decodeURIComponent(atob(encoded));
+            localStorage.setItem('user_session', decoded);
+            // Remove session param but preserve others (like module)
+            params.delete('session');
+            const remaining = params.toString();
+            window.history.replaceState({}, '', window.location.pathname + (remaining ? '?' + remaining : ''));
+            return JSON.parse(decoded);
+        }
+        const raw = localStorage.getItem('user_session');
+        return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+}
+
 // ══════════════════════════════════════════════════════════════
 // Mock state object for standalone usage (when no Chrome extension)
 // ══════════════════════════════════════════════════════════════
@@ -31,12 +52,261 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Default to manual entry for autopsy
     showManualEntry();
+
+    // Load personalized dashboard data from backend
+    loadDashboard();
 });
+
+// ══════════════════════════════════════════════════════════════
+// Dashboard Data Loading
+// ══════════════════════════════════════════════════════════════
+let dashboardData = null;
+
+async function loadDashboard() {
+    const session = getUserSession();
+    if (!session || !session.id) {
+        console.warn('No user session found — using static dashboard');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`${BACKEND_URL}/education/dashboard/${session.id}`);
+        if (!resp.ok) throw new Error(`Dashboard fetch failed: ${resp.status}`);
+        dashboardData = await resp.json();
+
+        // Update nav stats
+        document.getElementById('streakCount').textContent = dashboardData.streak_days || 0;
+        document.getElementById('xpCount').textContent = dashboardData.total_exp || 0;
+        xp = dashboardData.total_exp || 0;
+        streak = dashboardData.streak_days || 0;
+
+        // Update streak banner
+        const streakBanner = document.querySelector('.streak-count');
+        if (streakBanner) streakBanner.textContent = `${dashboardData.streak_days}-Day Streak`;
+
+        // Update learning paths
+        renderLearningPaths(dashboardData.learning_paths);
+
+        // Update skill profile
+        renderSkillProfile(dashboardData.skill_scores);
+
+        console.log('Dashboard loaded for', dashboardData.trader_type, 'trader');
+
+        // Auto-open specific module quiz if passed via URL param (from "Learn more" button)
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoModuleId = urlParams.get('module');
+        if (autoModuleId) {
+            window.history.replaceState({}, '', window.location.pathname);
+            loadModuleQuiz(parseInt(autoModuleId));
+        }
+    } catch (err) {
+        console.error('Failed to load dashboard:', err);
+    }
+}
+
+function renderLearningPaths(paths) {
+    const grid = document.querySelector('.path-grid');
+    if (!grid || !paths) return;
+
+    const categoryLabels = {
+        'Technical_Analysis': { icon: '📈', title: 'Technical Analysis', desc: 'RSI, MACD, support/resistance. Tailored to your style.', color: 'red' },
+        'Psychology': { icon: '🧠', title: 'Trading Psychology', desc: 'Why you revenge trade after losses. How to stop.', color: 'teal' },
+        'Risk_Management': { icon: '⚖️', title: 'Risk Management', desc: 'Position sizing, stop-loss logic, risk-reward ratios.', color: 'blue' },
+        'Advanced_Strategies': { icon: '🏆', title: 'Advanced Strategies', desc: 'Accumulators, volatility indices, advanced setups.', color: 'gold' },
+    };
+
+    grid.innerHTML = paths.map((path, i) => {
+        const meta = categoryLabels[path.category] || { icon: '📚', title: path.category, desc: '', color: 'red' };
+        const isActive = i === 0;
+
+        return `
+        <div class="path-card ${isActive ? 'active' : ''}" data-category="${path.category}">
+            <div class="path-icon">${meta.icon}</div>
+            <div class="path-title">${meta.title}</div>
+            <div class="path-desc">${meta.desc}</div>
+            <div class="progress-row">
+                <div class="progress-bar">
+                    <div class="progress-fill fill-${meta.color}" style="width:${path.progress_percent}%"></div>
+                </div>
+                <div class="progress-pct">${path.progress_percent}%</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+
+function renderSkillProfile(skills) {
+    if (!skills) return;
+    const container = document.querySelector('.skill-meters');
+    if (!container) return;
+
+    const skillDefs = [
+        { key: 'Technical_Analysis', name: 'Technical Analysis', color: 'var(--red)' },
+        { key: 'Risk_Management', name: 'Risk Management', color: 'var(--info)' },
+        { key: 'Psychology', name: 'Psychology', color: 'var(--warning)' },
+        { key: 'Market_Structure', name: 'Market Structure', color: 'var(--profit)' },
+    ];
+
+    container.innerHTML = skillDefs.map(s => {
+        const val = skills[s.key] || 0;
+        return `
+      <div class="skill-row">
+        <div class="skill-name">${s.name}</div>
+        <div class="skill-bar"><div class="skill-fill" style="width:${val}%;background:${s.color}"></div></div>
+        <div class="skill-val">${val}</div>
+      </div>`;
+    }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// Module Quiz Modal (opens when clicking a learning path)
+// ══════════════════════════════════════════════════════════════
+let currentQuiz = null;
+let currentQuizAnswers = [];
+
+function openPathModules(category) {
+    if (!dashboardData) { openScenarios(); return; }
+    const path = dashboardData.learning_paths.find(p => p.category === category);
+    if (!path) return;
+
+    // Find the first incomplete module
+    const nextModule = path.modules.find(m => m.status !== 'completed') || path.modules[0];
+    loadModuleQuiz(nextModule.id);
+}
+
+async function loadModuleQuiz(moduleId) {
+    const session = getUserSession();
+    if (!session) return;
+
+    try {
+        const resp = await fetch(`${BACKEND_URL}/education/modules/${moduleId}/quiz?user_id=${session.id}`);
+        if (!resp.ok) throw new Error(`Quiz fetch failed: ${resp.status}`);
+        currentQuiz = await resp.json();
+        currentQuizAnswers = [];
+        showQuizModal(currentQuiz);
+    } catch (err) {
+        console.error('Failed to load quiz:', err);
+        showToast('Failed to load quiz — check backend connection');
+    }
+}
+
+function showQuizModal(quiz) {
+    const modal = document.getElementById('scenarios-modal');
+    const card = modal.querySelector('.scenario-card');
+
+    document.getElementById('scenarioChip').textContent = quiz.category.replace('_', ' ');
+    document.getElementById('qNum').textContent = '1';
+    document.getElementById('scenarioContextText').innerHTML =
+        `<strong>${quiz.title}</strong><br><em>Focus: ${quiz.focus}</em>${quiz.ai_generated ? '<br><span style="color:var(--red);font-size:11px;">🤖 AI-Generated Quiz</span>' : ''}`;
+    document.getElementById('marketDataRow').innerHTML = '';
+
+    // Show first question
+    if (quiz.quiz_questions && quiz.quiz_questions.length > 0) {
+        showQuizQuestion(0);
+    }
+
+    document.getElementById('aiExplain').classList.remove('visible');
+    document.getElementById('scenarioScore').textContent = '';
+    modal.style.display = 'flex';
+}
+
+function showQuizQuestion(idx) {
+    const q = currentQuiz.quiz_questions[idx];
+    document.getElementById('qNum').textContent = idx + 1;
+    document.getElementById('scenarioQuestion').innerHTML = q.question;
+
+    document.getElementById('choiceGrid').innerHTML =
+        q.options.map((opt, i) => {
+            const letter = opt.charAt(0);
+            const text = opt.substring(3);
+            return `
+            <button class="choice-btn"
+                    data-qidx="${idx}"
+                    data-answer="${letter}">
+                <span class="choice-label">${letter}</span>${text}
+            </button>`;
+        }).join('');
+
+    document.getElementById('aiExplain').classList.remove('visible');
+}
+
+function answerQuiz(qIdx, answer) {
+    const q = currentQuiz.quiz_questions[qIdx];
+    const isCorrect = answer === q.correct;
+    currentQuizAnswers[qIdx] = answer;
+
+    // Highlight correct/wrong
+    const btns = document.querySelectorAll('.choice-btn');
+    btns.forEach((btn, i) => {
+        btn.disabled = true;
+        const btnLetter = q.options[i].charAt(0);
+        if (btnLetter === q.correct) btn.classList.add('reveal-correct');
+        if (btnLetter === answer && !isCorrect) btn.classList.add('selected-wrong');
+        if (btnLetter === answer && isCorrect) btn.classList.add('selected-correct');
+    });
+
+    // Show explanation
+    document.getElementById('aiExplainText').innerHTML = `<strong>${isCorrect ? 'Correct!' : 'Not quite.'}</strong><br>${q.explanation}`;
+    document.getElementById('aiFollowup').innerHTML = '';
+    document.getElementById('aiExplain').classList.add('visible');
+
+    if (isCorrect) addXP(20, 'Correct answer!');
+    else addXP(5, 'Good try!');
+
+    // If there are more questions, update Next button
+    const nextIdx = qIdx + 1;
+    if (nextIdx < currentQuiz.quiz_questions.length) {
+        document.querySelector('.scenario-nav .btn-primary').onclick = () => showQuizQuestion(nextIdx);
+    } else {
+        document.querySelector('.scenario-nav .btn-primary').textContent = 'Submit Quiz';
+        document.querySelector('.scenario-nav .btn-primary').onclick = () => submitCurrentQuiz();
+    }
+}
+
+async function submitCurrentQuiz() {
+    const session = getUserSession();
+    if (!session || !currentQuiz) return;
+
+    try {
+        const resp = await fetch(`${BACKEND_URL}/education/quiz/submit-v2`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: session.id,
+                module_id: currentQuiz.module_id,
+                answers: currentQuizAnswers,
+            }),
+        });
+        if (!resp.ok) throw new Error('Submit failed');
+        const result = await resp.json();
+
+        // Sync XP from backend
+        if (result.total_exp !== undefined) {
+            xp = result.total_exp;
+            document.getElementById('xpCount').textContent = xp;
+        }
+
+        if (result.passed) {
+            addXP(result.exp_earned, 'Module completed!');
+            showToast(`Score: ${result.score}% — Module passed! +${result.exp_earned} XP`);
+        } else {
+            addXP(result.exp_earned, 'Quiz submitted');
+            showToast(`Score: ${result.score}% — Try again! +${result.exp_earned} XP`);
+        }
+
+        closeScenarios();
+        // Reload dashboard to reflect new progress
+        loadDashboard();
+    } catch (err) {
+        console.error('Quiz submit failed:', err);
+        showToast('Failed to submit quiz');
+    }
+}
 
 // ══════════════════════════════════════════════════════════════
 // State
 // ══════════════════════════════════════════════════════════════
-let xp = 240, streak = 3;
+let xp = 0, streak = 0;
 let currentScenario = 0, scenarioAnswered = false;
 let score = 0, totalAnswered = 0;
 
@@ -151,10 +421,13 @@ function loadScenario(idx) {
       <div class="datum-val ${d.cls}">${d.val}</div>
     </div>`).join('');
     document.getElementById('scenarioQuestion').innerHTML = s.question;
-    document.getElementById('choiceGrid').innerHTML = s.choices.map((c, i) => `
-    <button class="choice-btn" onclick="selectChoice(${i})" id="choice-${i}">
-      <span class="choice-label">${c.l}</span>${c.t}
-    </button>`).join('');
+    document.getElementById('choiceGrid').innerHTML =
+        s.choices.map((c, i) => `
+        <button class="choice-btn"
+                data-choice="${i}">
+            <span class="choice-label">${c.l}</span>${c.t}
+        </button>
+    `).join('');
     document.getElementById('aiExplain').classList.remove('visible');
     document.getElementById('scenarioScore').textContent = totalAnswered > 0 ? `${score}/${totalAnswered} correct` : '';
 }
@@ -171,8 +444,10 @@ function selectChoice(idx) {
     if (isCorrect) { score++; addXP(20, 'Correct answer!'); } else { addXP(5, 'Good try — lesson learned!'); }
     document.getElementById('scenarioScore').textContent = `${score}/${totalAnswered} correct`;
     document.getElementById('aiExplainText').innerHTML = s.explanation;
-    document.getElementById('aiFollowup').innerHTML = s.followups.map(f =>
-        `<div class="followup-pill" onclick="closeScenarios();switchTab('tutor');askTutor('${f}')">${f}</div>`).join('');
+    document.getElementById('aiFollowup').innerHTML =
+        s.followups.map(f =>
+            `<div class="followup-pill" data-followup="${encodeURIComponent(f)}">${f}</div>`
+        ).join('');
     document.getElementById('aiExplain').classList.add('visible');
 }
 
@@ -404,6 +679,7 @@ function renderTradesTable(trades) {
         const isWin = profitLoss >= 0;
 
         const row = document.createElement('tr');
+        row.setAttribute('data-trade-row', index);
         row.style.borderBottom = '1px solid var(--border)';
         row.style.transition = 'background 0.2s';
         row.style.cursor = 'pointer';
@@ -421,15 +697,6 @@ function renderTradesTable(trades) {
         ${isWin ? '+' : ''}$${profitLoss.toFixed(2)}
       </td>
     `;
-
-        // Click row to toggle checkbox
-        row.onclick = (e) => {
-            if (e.target.type !== 'checkbox') {
-                const checkbox = row.querySelector('.trade-checkbox');
-                checkbox.checked = !checkbox.checked;
-                updateSelectedTrades();
-            }
-        };
 
         tbody.appendChild(row);
     });
@@ -571,9 +838,14 @@ Format your response with clear sections and be specific with numbers and exampl
             `<span style="color:var(--info);font-weight:600;">Next: </span>Review the patterns identified and ask your tutor for specific guidance on improvement areas.`;
 
         document.getElementById('autopsyActions').innerHTML = `
-      <button class="followup-pill" onclick="switchTab('tutor');askTutor('Based on my recent ${selectedTrades.length} trades analysis, what specific habits should I change?')">Ask tutor about habits →</button>
-      <button class="followup-pill" onclick="openScenarios()">Practice scenario →</button>`;
-
+            <button class="followup-pill"
+                    data-tutor="Based on my recent ${selectedTrades.length} trades analysis, what specific habits should I change?">
+                Ask tutor about habits →
+            </button>
+            <button class="followup-pill"
+                    data-open-scenarios="true">
+                Practice scenario →
+            </button>`;
         addXP(20, `Analyzed ${selectedTrades.length} trades!`);
         resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -691,8 +963,14 @@ function renderAutopsyFromText(aiResponse, instrument, dir, result, entry, exitP
         `<span style="color:var(--info);font-weight:600;">Next: </span>Review the analysis above and implement the specific improvements suggested.`;
 
     document.getElementById('autopsyActions').innerHTML = `
-    <button class="followup-pill" onclick="switchTab('tutor');askTutor('Based on my last ${instrument} trade, what should I focus on improving?')">Ask tutor →</button>
-    <button class="followup-pill" onclick="openScenarios()">Practice scenario →</button>`;
+        <button class="followup-pill"
+                data-tutor="Based on my last ${instrument} trade, what should I focus on improving?">
+            Ask tutor →
+        </button>
+        <button class="followup-pill"
+                data-open-scenarios="true">
+            Practice scenario →
+        </button>`;
 }
 
 function showAnalysisError(error) {
@@ -763,4 +1041,74 @@ document.getElementById('fetch-past-trades').addEventListener('click', fetchPast
 document.getElementById('btnAnalyzeSelected').addEventListener('click', analyzeSelectedTrades);
 document.getElementById('btn-autopsy-run').addEventListener('click', runManualAutopsy);
 document.getElementById('selectAll').addEventListener('click', toggleSelectAll);
-document.querySelectorAll('.trade-checkbox').forEach(el => el.addEventListener('change', updateSelectedTrades));
+// document.querySelectorAll('.trade-checkbox').forEach(el => el.addEventListener('change', updateSelectedTrades));
+
+/* ══════════════════════════════════════════════════════════════
+   GLOBAL EVENT DELEGATION (CSP SAFE)
+══════════════════════════════════════════════════════════════ */
+
+document.addEventListener('click', function (e) {
+
+    /* ---------- Learning Path ---------- */
+    const pathCard = e.target.closest('.path-card[data-category]');
+    if (pathCard) {
+        openPathModules(pathCard.dataset.category);
+        return;
+    }
+
+    /* ---------- Quiz Choice ---------- */
+    const quizBtn = e.target.closest('.choice-btn[data-qidx]');
+    if (quizBtn) {
+        answerQuiz(
+            parseInt(quizBtn.dataset.qidx),
+            quizBtn.dataset.answer
+        );
+        return;
+    }
+
+    /* ---------- Scenario Choice ---------- */
+    const scenarioBtn = e.target.closest('.choice-btn[data-choice]');
+    if (scenarioBtn) {
+        selectChoice(parseInt(scenarioBtn.dataset.choice));
+        return;
+    }
+
+    /* ---------- Followup → Tutor ---------- */
+    const followup = e.target.closest('[data-followup]');
+    if (followup) {
+        closeScenarios();
+        switchTab('tutor');
+        askTutor(decodeURIComponent(followup.dataset.followup));
+        return;
+    }
+
+    /* ---------- Tutor Shortcut ---------- */
+    const tutorBtn = e.target.closest('[data-tutor]');
+    if (tutorBtn) {
+        switchTab('tutor');
+        askTutor(tutorBtn.dataset.tutor);
+        return;
+    }
+
+    /* ---------- Open Scenarios ---------- */
+    if (e.target.closest('[data-open-scenarios]')) {
+        openScenarios();
+        return;
+    }
+
+    /* ---------- Trade Row Toggle ---------- */
+    const tradeRow = e.target.closest('tr[data-trade-row]');
+    if (tradeRow && e.target.type !== 'checkbox') {
+        const checkbox = tradeRow.querySelector('.trade-checkbox');
+        checkbox.checked = !checkbox.checked;
+        updateSelectedTrades();
+        return;
+    }
+});
+
+/* ---------- Checkbox Change ---------- */
+document.addEventListener('change', function (e) {
+    if (e.target.matches('.trade-checkbox')) {
+        updateSelectedTrades();
+    }
+});

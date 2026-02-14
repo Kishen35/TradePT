@@ -1,6 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import ai, deriv, users
+import os
+from pathlib import Path
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, FileResponse
+from app.routers.education import router as education_router
+from app.routers.claude import router as claude_router
+
 
 app = FastAPI(title="PocketPT Backend (with Python FastAPI + SQLite)")
 
@@ -24,7 +32,24 @@ app.add_middleware(
 app.include_router(users.router)
 app.include_router(ai.router)
 app.include_router(deriv.router)
+app.include_router(education_router)
+app.include_router(claude_router)
+
+# Resolve extension directory for static files
+EXTENSION_DIR = Path(__file__).resolve().parent.parent.parent / "extension"
 
 @app.get("/")
 def health():
     return {"status": "ok"}
+
+# Style-profiling page route
+@app.get("/style-profiling", response_class=HTMLResponse)
+async def style_profiling(request: Request):
+    html_path = EXTENSION_DIR / "views" / "questionnaire.html"
+    if html_path.exists():
+        return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>Page not found</h1>", status_code=404)
+
+# Serve static files from extension directory (must be AFTER API routes)
+if EXTENSION_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(EXTENSION_DIR)), name="static")

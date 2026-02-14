@@ -7,9 +7,33 @@ let cardsReady = false;
 // The proxy at /api/claude adds your API key server-side, so it never
 // touches the browser. Change PROXY_URL if you deploy elsewhere.
 
-const PROXY_URL = "/api/claude";   // same-origin — no CORS issues
-// const PROXY_URL = "http://localhost:8000/api/claude";  // use this if frontend
-//                                                         // is served separately
+const BACKEND_URL = "http://localhost:8000";
+const PROXY_URL = BACKEND_URL + "/api/claude";
+
+// Get user session — check URL param first (passed from extension), then localStorage
+function getUserSession() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('session');
+
+    if (encoded) {
+      const decoded = decodeURIComponent(atob(encoded));
+      localStorage.setItem('user_session', decoded);
+
+      window.history.replaceState({}
+
+        , '', window.location.pathname);
+      return JSON.parse(decoded);
+    }
+
+    const raw = localStorage.getItem('user_session');
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  catch {
+    return null;
+  }
+}
 
 async function callClaude(systemPrompt, userMessage) {
   const response = await fetch(PROXY_URL, {
@@ -106,7 +130,7 @@ function showCardError(side, err) {
   document.getElementById('body-' + side).innerHTML = `
     <div class="error-msg">
       <strong>Failed to load profile.</strong> ${err.message}<br>
-      <button class="btn-ghost" style="margin-top:10px;font-size:12px" onclick="generateStrategyCards()">↻ Retry</button>
+      <button class="btn-ghost" style="margin-top:10px;font-size:12px" id='btnGhostRetry">↻ Retry</button>
     </div>`;
 }
 
@@ -229,8 +253,8 @@ JSON shape:
       </div>`).join('');
     document.getElementById('aiResultText').innerHTML = result.aiText;
     document.getElementById('resultFooter').innerHTML = `
-      <button class="btn-primary${side === 'right' ? ' teal' : ''}" onclick="addXP(50,'Curriculum started!')">Start My Curriculum →</button>
-      <button class="btn-ghost" onclick="resetChoice()">← Change my mind</button>`;
+      <button class="btn-primary${side === 'right' ? ' teal' : ''}">Start My Curriculum →</button>
+      <button class="btn-ghost">← Change my mind</button>`;
 
   } catch (err) {
     document.getElementById('aiResultText').innerHTML = `
@@ -239,8 +263,8 @@ JSON shape:
         <button class="btn-ghost" style="margin-top:10px;font-size:12px" onclick="showResultPanel('${side}')">↻ Retry</button>
       </div>`;
     document.getElementById('resultFooter').innerHTML = `
-      <button class="btn-primary${side === 'right' ? ' teal' : ''}" onclick="addXP(50,'Curriculum started!')">Start My Curriculum →</button>
-      <button class="btn-ghost" onclick="resetChoice()">← Change my mind</button>`;
+      <button class="btn-primary${side === 'right' ? ' teal' : ''}">Start My Curriculum →</button>
+      <button class="btn-ghost">← Change my mind</button>`;
   }
 }
 
@@ -263,6 +287,128 @@ function addXP(amount, reason) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
+// ── Save trader type & generate curriculum ──
+async function startCurriculum() {
+  if (!chosen) return;
+
+  const traderType = chosen === 'left' ? 'momentum' : 'precision';
+  const session = getUserSession();
+
+  if (!session || !session.id) {
+    localStorage.setItem('tradept_trader_type', traderType);
+    alert('No session found. Please log in first.');
+    return;
+  }
+
+  // 1. Save trader type
+  let updatedUser = session;
+
+  try {
+    const resp = fetch(`${BACKEND_URL}/users/${session.id}/trader-type`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+
+      ,
+      body: JSON.stringify({
+        trader_type: traderType
+      })
+    });
+
+    if (resp.ok) {
+      updatedUser = await resp.json();
+      localStorage.setItem('user_session', JSON.stringify(updatedUser));
+    }
+  }
+
+  catch (err) {
+    console.error('Failed to save trader type:', err);
+  }
+
+  // 2. Show progress overlay
+  const overlay = document.getElementById('progressOverlay');
+  overlay.style.display = 'flex';
+  const fill = document.getElementById('curriculumProgressFill');
+  const pct = document.getElementById('progressPercent');
+  const txt = document.getElementById('progressText');
+
+  // Animate fake progress (0 → 80% over 4s while API runs)
+  let progress = 0;
+
+  const progressInterval = setInterval(() => {
+    if (progress < 80) {
+      progress += 2;
+      fill.style.width = progress + '%';
+      pct.textContent = progress + '%';
+    }
+
+    if (progress === 20) txt.textContent = 'Generating AI-powered questions...';
+    if (progress === 50) txt.textContent = 'Building personalized modules...';
+    if (progress === 70) txt.textContent = 'Almost ready...';
+  }
+
+    , 100);
+
+  // 3. Generate curriculum
+  try {
+    const genResp = fetch(`${BACKEND_URL}/education/generate-curriculum`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+
+      ,
+      body: JSON.stringify({
+        user_id: session.id
+      })
+    });
+
+    clearInterval(progressInterval);
+
+    if (genResp.ok) {
+      const result = await genResp.json();
+      fill.style.width = '100%';
+      pct.textContent = '100%';
+
+      txt.textContent = `Curriculum ready! ${result.generated + result.cached} modules loaded.`;
+
+      // Redirect to dashboard after brief pause
+      setTimeout(() => {
+        const encoded = btoa(encodeURIComponent(JSON.stringify(updatedUser)));
+
+        window.location.href = `/static/trading_edu.html?session=${encoded}`;
+      }
+
+        , 1200);
+    }
+
+    else {
+      throw new Error('Generation failed');
+    }
+  }
+
+  catch (err) {
+    clearInterval(progressInterval);
+    console.error('Curriculum generation failed:', err);
+    txt.textContent = 'Generation failed. Redirecting...';
+    fill.style.background = '#ff4444';
+
+    // Still redirect to dashboard (quizzes can be generated on-demand)
+    setTimeout(() => {
+      const encoded = btoa(encodeURIComponent(JSON.stringify(updatedUser)));
+
+      window.location.href = `/static/trading_edu.html?session=$ {
+                encoded
+            }
+
+            `;
+    }
+
+      , 1500);
+  }
+}
+
 // ── Init ──
 generateStrategyCards();
 
@@ -272,3 +418,9 @@ generateStrategyCards();
 // ══════════════════════════════════════════════════════════════
 document.getElementById('card-left').addEventListener('click', () => selectStrategy('left'));
 document.getElementById('card-right').addEventListener('click', () => selectStrategy('right'));
+document.querySelector('.btn-primary').addEventListener('click', () => {
+  addXP(50, 'Curriculum started!');
+});
+
+document.querySelector('.btn-ghost').addEventListener('click', resetChoice);
+document.querySelector('#btnGhostRetry').addEventListener('click', generateStrategyCards);

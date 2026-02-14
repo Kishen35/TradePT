@@ -923,6 +923,22 @@
     <div class="xp-amount" id="xpAmount">+20 XP</div>
     <div class="xp-reason" id="xpReason">Profile set!</div>
   </div>
+  <div id="progressOverlay"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; display:none; align-items:center; justify-content:center; flex-direction:column;">
+    <div style="text-align:center; max-width:400px; padding:40px;">
+      <div style="font-size:48px; margin-bottom:20px;">🧠</div>
+      <h2 style="color:#fff; margin-bottom:8px; font-family:'IBM Plex Sans',sans-serif;">Building
+        Your Curriculum...</h2>
+      <p id="progressText" style="color:#aaa; font-size:14px; margin-bottom:24px;">Generating
+        personalized questions with AI...</p>
+      <div style="width:100%; height:8px; background:#1a1a2e; border-radius:4px; overflow:hidden;">
+        <div id="curriculumProgressFill"
+          style="width:0%; height:100%; background:linear-gradient(90deg,#ff444f,#ff6b6b); border-radius:4px; transition:width 0.3s ease;">
+        </div>
+      </div>
+      <p id="progressPercent" style="color:#666; font-size:12px; margin-top:8px;">0%</p>
+    </div>
+  </div>
 
   <script src="../js/trading_strategy.js" type="module"></script>
 </body>
