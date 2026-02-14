@@ -564,7 +564,7 @@ class Scraper {
               pnl: pnlText,
               type: typeEl
                 ? extractTextFromHTML(typeEl.innerHTML) ||
-                  typeEl.innerText.trim()
+                typeEl.innerText.trim()
                 : "Unknown",
               isProfit: isProfit,
             };
@@ -964,7 +964,7 @@ function injectPocketPTTab() {
   const tabWrapper = document.createElement('span');
   tabWrapper.id = 'pocketpt-nav-tab';
   tabWrapper.className = 'header__menu-link--active__link-wrapper';
-  
+
   const tabLink = document.createElement('a');
   tabLink.className = 'header__menu-link pocketpt-tab';
   tabLink.href = '#';
@@ -990,31 +990,65 @@ function injectPocketPTTab() {
 
 function togglePocketPTDashboard() {
   let iframe = document.getElementById('pocketpt-dashboard-overlay');
+  let backBtn = document.getElementById('pocketpt-back-btn');
   const tab = document.querySelector('.pocketpt-tab');
-  
+
   if (!iframe) {
+    // Create iframe
     iframe = document.createElement('iframe');
     iframe.id = 'pocketpt-dashboard-overlay';
-    iframe.src = chrome.runtime.getURL('trading_edu.html');
-    document.body.appendChild(iframe);
-  }
+    iframe.src = chrome.runtime.getURL('views/trading_edu.html');
 
-  const isVisible = iframe.style.display === 'block';
-  iframe.style.display = isVisible ? 'none' : 'block';
-  
-  if (tab) {
-    if (!isVisible) {
-      tab.classList.add('active');
-      document.querySelectorAll('.header__menu-link').forEach(el => {
-        if (el !== tab) el.parentElement.classList.remove('header__menu-link--active__link-wrapper');
-      });
-    } else {
-      tab.classList.remove('active');
-      if (window.location.href.includes('/reports')) {
-        const reportsTab = document.getElementById('dt_reports_tab');
-        if (reportsTab) reportsTab.parentElement.classList.add('header__menu-link--active__link-wrapper');
-      }
-    }
+    // FULL SCREEN STYLE
+    Object.assign(iframe.style, {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '100vw',
+      height: '100vh',
+      border: 'none',
+      zIndex: '999999',
+      background: '#fff',
+      display: 'block'
+    });
+
+    document.body.appendChild(iframe);
+
+    // Create Back Button
+    backBtn = document.createElement('button');
+    backBtn.id = 'pocketpt-back-btn';
+    backBtn.innerText = '← Back';
+
+    Object.assign(backBtn.style, {
+      position: 'fixed',
+      bottom: '20px',
+      left: '20px',
+      zIndex: '1000000',
+      padding: '10px 16px',
+      fontSize: '14px',
+      cursor: 'pointer',
+      borderRadius: '6px',
+      border: 'none',
+      background: '#000',
+      color: '#fff'
+    });
+
+    backBtn.onclick = () => {
+      iframe.remove();
+      backBtn.remove();
+
+      if (tab) tab.classList.remove('active');
+    };
+
+    document.body.appendChild(backBtn);
+
+    if (tab) tab.classList.add('active');
+
+  } else {
+    // If already exists, remove both
+    iframe.remove();
+    if (backBtn) backBtn.remove();
+    if (tab) tab.classList.remove('active');
   }
 }
 

@@ -28,8 +28,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "trading_edu.html",
-        "trading-styles.css",
         "favicon.png",
         "pocketpt-tab.css",
         "icon.png",
