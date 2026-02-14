@@ -33,7 +33,19 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
       asset_preference,
     });
 
-    alert("Signup successful: Welcome ", name);
+    const result = await apiHelper.login({
+      email,
+      password,
+    });
+    chrome.runtime.sendMessage(
+      {
+        type: "user_registration_data",
+        payload: result,
+      },
+      () => {
+        alert("Signup successful: Welcome ", name);
+      },
+    );
   } catch (error) {
     console.error("Signup failed:", error);
     alert("Signup failed: " + error.message);

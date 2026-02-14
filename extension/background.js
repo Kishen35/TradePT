@@ -21,10 +21,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  // Login - user session data storage
   if (request.type === "user_session_data") {
     // Relay user session data to content script
     console.log(
       "Received user session data in background script:",
+      request.payload,
+    );
+    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+      if (!tab?.id) return;
+      chrome.tabs.sendMessage(tab.id, request);
+    });
+
+    sendResponse();
+    return true;
+  }
+
+  // Register - display AI strategy persona page
+  if (request.type === "user_registration_data") {
+    // Relay user session data to content script
+    console.log(
+      "Received user registration data in background script:",
       request.payload,
     );
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {

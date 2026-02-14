@@ -952,6 +952,12 @@ chrome.runtime.onMessage.addListener((message) => {
     console.log("User Session Data Received:", message.payload);
     localStorage.setItem("user_session_data", JSON.stringify(message.payload));
   }
+
+  if (message.type === 'user_registration_data') {
+    // To handle populating and showing up trading strategy page
+    console.log("User Registration Data Received:", message.payload);
+    togglePocketPTStrategy();
+  }
 });
 
 // --- PocketPT Dashboard Integration ---
@@ -1002,10 +1008,10 @@ function togglePocketPTDashboard() {
     // FULL SCREEN STYLE
     Object.assign(iframe.style, {
       position: 'fixed',
-      top: '0',
+      top: '48px',
       left: '0',
       width: '100vw',
-      height: '100vh',
+      height: 'calc(100vh - 48px - 36px)', // ✅ spaces added
       border: 'none',
       zIndex: '999999',
       background: '#fff',
@@ -1021,7 +1027,7 @@ function togglePocketPTDashboard() {
 
     Object.assign(backBtn.style, {
       position: 'fixed',
-      bottom: '20px',
+      bottom: '50px',
       left: '20px',
       zIndex: '1000000',
       padding: '10px 16px',
@@ -1049,6 +1055,65 @@ function togglePocketPTDashboard() {
     iframe.remove();
     if (backBtn) backBtn.remove();
     if (tab) tab.classList.remove('active');
+  }
+}
+
+// --- PocketPT Trading Strategy Page Display
+function togglePocketPTStrategy() {
+  let iframe = document.getElementById('pocketpt-strategy-overlay');
+  let backBtn = document.getElementById('pocketpt-strategy-back-btn');
+
+  if (!iframe) {
+    // Create iframe
+    iframe = document.createElement('iframe');
+    iframe.id = 'pocketpt-strategy-overlay';
+    iframe.src = chrome.runtime.getURL('views/trading_strategy.html');
+
+    // FULL SCREEN STYLE
+    Object.assign(iframe.style, {
+      position: 'fixed',
+      top: '48px',
+      left: '0',
+      width: '100vw',
+      height: 'calc(100vh - 48px - 36px)', // ✅ spaces added
+      border: 'none',
+      zIndex: '999999',
+      background: '#fff',
+      display: 'block'
+    });
+
+    document.body.appendChild(iframe);
+
+    // Create Back Button
+    backBtn = document.createElement('button');
+    backBtn.id = 'pocketpt-strategy-back-btn';
+    backBtn.innerText = '← Back';
+
+    Object.assign(backBtn.style, {
+      position: 'fixed',
+      bottom: '50px',
+      left: '20px',
+      zIndex: '1000000',
+      padding: '10px 16px',
+      fontSize: '14px',
+      cursor: 'pointer',
+      borderRadius: '6px',
+      border: 'none',
+      background: '#000',
+      color: '#fff'
+    });
+
+    backBtn.onclick = () => {
+      iframe.remove();
+      backBtn.remove();
+    };
+
+    document.body.appendChild(backBtn);
+
+  } else {
+    // If already exists, remove both
+    iframe.remove();
+    if (backBtn) backBtn.remove();
   }
 }
 
