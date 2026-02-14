@@ -732,3 +732,33 @@ function showAnalysisError(error) {
     document.getElementById('autopsyNextStep').innerHTML = '';
     document.getElementById('autopsyActions').innerHTML = '';
 }
+
+
+// ══════════════════════════════════════════════════════════════
+// Click Event Listeners Bindings
+// ══════════════════════════════════════════════════════════════
+document.getElementById('learn-nav-tab').addEventListener('click', () => switchTab('learn'));
+document.getElementById('tutor-nav-tab').addEventListener('click', () => switchTab('tutor'));
+document.getElementById('autopsy-nav-tab').addEventListener('click', () => switchTab('autopsy'));
+document.getElementById('leaderboard-nav-tab').addEventListener('click', () => switchTab('leaderboard'));
+document.getElementById('streak-keep-it-going').addEventListener('click', () => openScenarios);
+document.getElementById('learning-section-link').addEventListener('click', () => showToast('Rebuilding curriculum from your trades...'));
+document.getElementById('path-grid-card-active').addEventListener('click', () => openScenarios);
+document.getElementById('rsi-concept-card').addEventListener('click', () => learnConcept('RSI'));
+document.getElementById('support-concept-card').addEventListener('click', () => learnConcept('Support & Resistance'));
+document.getElementById('macd-concept-card').addEventListener('click', () => learnConcept('MACD'));
+document.getElementById('stop-concept-card').addEventListener('click', () => learnConcept('Stop Loss Placement'));
+document.getElementById('candle-concept-card').addEventListener('click', () => learnConcept('Candlestick Patterns'));
+document.getElementById('risk-concept-card').addEventListener('click', () => learnConcept('Risk:Reward'));
+document.getElementById('tutor-pill-link').addEventListener('click', () => { switchTab('tutor'); askTutor('Why do I keep closing trades too early?') });
+document.getElementById('close-modal-scenario').addEventListener('click', () => closeScenarios);
+document.getElementById('btn-previous').addEventListener('click', () => prevScenario);
+document.getElementById('btn-next-scenario').addEventListener('click', () => nextScenario);
+document.getElementById('tutorInput').addEventListener('keydown', (event) => { if (event.key === 'Enter') sendTutorMsg() });
+document.getElementById('sendBtn').addEventListener('click', () => sendTutorMsg);
+document.getElementById('btnPastTrades').addEventListener('click', () => showPastTrades);
+document.getElementById('btnManualEntry').addEventListener('click', () => showManualEntry);
+document.getElementById('fetch-past-trades').addEventListener('click', () => fetchPastTrades);
+document.getElementById('btnAnalyzeSelected').addEventListener('click', () => analyzeSelectedTrades);
+document.getElementById('btn-autopsy-run').addEventListener('click', () => runManualAutopsy);
+document.getElementById('selectAll').addEventListener('click', () => toggleSelectAll);
