@@ -265,3 +265,10 @@ function addXP(amount, reason) {
 
 // ── Init ──
 generateStrategyCards();
+
+
+// ══════════════════════════════════════════════════════════════
+// Click Event Listeners Bindings
+// ══════════════════════════════════════════════════════════════
+document.getElementById('card-left').addEventListener('click', () => selectStrategy('left'));
+document.getElementById('card-right').addEventListener('click', () => selectStrategy('right'));

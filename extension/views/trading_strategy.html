@@ -1,427 +1,930 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PocketPT — Choose Your Trading Style</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  /* ── Reset & Base ── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0d0e11;
-    --surface: #14161a;
-    --surface-2: #1c1f25;
-    --border: rgba(255,255,255,.07);
-    --red: #e63946;
-    --teal: #2ec4b6;
-    --text: #f0f0f0;
-    --muted: #6b7280;
-    --font: 'IBM Plex Sans', sans-serif;
-    --mono: 'IBM Plex Mono', monospace;
-  }
-  html { scroll-behavior: smooth; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 15px;
-    line-height: 1.6;
-    min-height: 100vh;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PocketPT — Choose Your Trading Style</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=IBM+Plex+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    /* ── Reset & Base ── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  /* ── Nav ── */
-  nav {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 32px;
-    height: 56px;
-    border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(13,14,17,.92);
-    backdrop-filter: blur(12px);
-  }
-  .nav-brand { font-weight: 700; font-size: 17px; letter-spacing: -.3px; }
-  .brand-red { color: var(--red); }
-  .brand-dot { display: inline-block; width: 5px; height: 5px; background: var(--red); border-radius: 50%; margin-left: 2px; vertical-align: middle; }
-  .nav-right { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+    :root {
+      --bg: #0d0e11;
+      --surface: #14161a;
+      --surface-2: #1c1f25;
+      --border: rgba(255, 255, 255, .07);
+      --red: #e63946;
+      --teal: #2ec4b6;
+      --text: #f0f0f0;
+      --muted: #6b7280;
+      --font: 'IBM Plex Sans', sans-serif;
+      --mono: 'IBM Plex Mono', monospace;
+    }
 
-  /* ── Page layout ── */
-  .page { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
-  .page-tag {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-family: var(--mono); font-size: 11px; color: var(--muted);
-    letter-spacing: .08em; text-transform: uppercase;
-    border: 1px solid var(--border); border-radius: 20px;
-    padding: 4px 12px; margin-bottom: 20px;
-  }
-  .live-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: var(--red);
-    animation: pulse 1.8s ease-in-out infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
-  .page-h1 { font-size: clamp(28px,5vw,46px); font-weight: 700; letter-spacing: -.5px; line-height: 1.15; margin-bottom: 14px; }
-  .page-h1 em { color: var(--red); font-style: italic; }
-  .page-sub { color: var(--muted); max-width: 560px; font-size: 15px; margin-bottom: 40px; }
+    html {
+      scroll-behavior: smooth;
+    }
 
-  /* ── VS Layout ── */
-  .vs-layout {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 0 24px;
-    align-items: start;
-  }
-  @media (max-width: 700px) {
-    .vs-layout { grid-template-columns: 1fr; gap: 16px 0; }
-    .vs-divider { flex-direction: row; gap: 0; padding: 0; }
-    .vs-line, .vs-line-bottom { flex: 1; height: 1px; width: auto; }
-    .vs-badge { margin: 0 16px; }
-  }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
 
-  /* ── Strategy Card ── */
-  .strategy-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform .2s, box-shadow .2s, border-color .2s;
-  }
-  .strategy-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,.3); }
-  .strategy-card.selected-left { border-color: var(--red); box-shadow: 0 0 0 2px rgba(230,57,70,.25); }
-  .strategy-card.selected-right { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(46,196,182,.25); }
-  .strategy-card.unselected { opacity: .45; filter: grayscale(.4); }
+    /* ── Nav ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13, 14, 17, .92);
+      backdrop-filter: blur(12px);
+    }
 
-  /* Card hero */
-  .card-hero {
-    padding: 28px 24px 22px;
-    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
-    position: relative;
-  }
-  .card-hero-left { background: linear-gradient(135deg, #1a0a0c 0%, #1e1010 100%); }
-  .card-hero-right { background: linear-gradient(135deg, #071415 0%, #0b1c1b 100%); }
-  .card-badge {
-    font-family: var(--mono); font-size: 10px; font-weight: 500;
-    letter-spacing: .1em; text-transform: uppercase;
-    padding: 3px 9px; border-radius: 4px; margin-bottom: 4px;
-  }
-  .badge-left { background: rgba(230,57,70,.15); color: var(--red); border: 1px solid rgba(230,57,70,.25); }
-  .badge-right { background: rgba(46,196,182,.12); color: var(--teal); border: 1px solid rgba(46,196,182,.2); }
-  .card-icon { font-size: 36px; line-height: 1; margin-bottom: 4px; }
-  .card-title { font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
-  .card-subtitle { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+    .nav-brand {
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -.3px;
+    }
 
-  /* Card body */
-  .card-body { padding: 22px 24px 24px; }
-  .card-desc { font-size: 14px; color: #b0b5bf; margin-bottom: 20px; line-height: 1.65; }
-  .card-desc em { color: var(--text); font-style: italic; }
+    .brand-red {
+      color: var(--red);
+    }
 
-  /* Trait list */
-  .trait-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-  .trait-row { display: flex; gap: 10px; align-items: flex-start; }
-  .trait-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
-  .trait-text { font-size: 13px; color: #9ca3af; }
-  .trait-text strong { color: var(--text); font-weight: 600; }
+    .brand-dot {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      background: var(--red);
+      border-radius: 50%;
+      margin-left: 2px;
+      vertical-align: middle;
+    }
 
-  /* Metrics strip */
-  .metrics-strip {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: 1px; background: var(--border);
-    border: 1px solid var(--border); border-radius: 10px;
-    overflow: hidden; margin-bottom: 16px;
-  }
-  .metric { background: var(--surface-2); padding: 12px 10px; text-align: center; }
-  .metric-val { font-family: var(--mono); font-weight: 500; font-size: 14px; }
-  .metric-val.red { color: var(--red); }
-  .metric-val.teal { color: var(--teal); }
-  .metric-label { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: .04em; }
+    .nav-right {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
 
-  /* Psych tags */
-  .psych-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
-  .psych-tag {
-    font-size: 11px; font-family: var(--mono);
-    padding: 3px 9px; border-radius: 4px;
-    background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--muted);
-  }
+    /* ── Page layout ── */
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
 
-  /* Select button */
-  .select-btn {
-    width: 100%; padding: 12px 0; border-radius: 9px; border: none; cursor: pointer;
-    font-family: var(--font); font-weight: 600; font-size: 14px; letter-spacing: .02em;
-    transition: opacity .2s, transform .15s;
-  }
-  .select-btn:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
-  .select-btn.chosen { opacity: .7; cursor: default; }
-  .select-btn-left { background: var(--red); color: #fff; }
-  .select-btn-right { background: var(--teal); color: #0d1412; }
+    .page-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      margin-bottom: 20px;
+    }
 
-  /* ── VS Divider ── */
-  .vs-divider {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 0; padding-top: 80px;
-  }
-  .vs-line { width: 1px; height: 80px; background: var(--border); }
-  .vs-line-bottom { width: 1px; height: 80px; background: var(--border); }
-  .vs-badge {
-    font-family: var(--mono); font-weight: 500; font-size: 11px;
-    color: var(--muted); background: var(--surface-2);
-    border: 1px solid var(--border); border-radius: 20px;
-    padding: 5px 10px; letter-spacing: .08em;
-  }
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
 
-  /* ── Result Panel ── */
-  .result-panel {
-    margin-top: 40px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    display: none;
-    animation: slideUp .35s ease;
-  }
-  .result-panel.visible { display: block; }
-  @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-  .result-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface-2);
-    flex-wrap: wrap; gap: 12px;
-  }
-  .result-header-left { display: flex; align-items: center; gap: 14px; }
-  .result-icon { font-size: 32px; }
-  .result-title { font-weight: 600; font-size: 16px; }
-  .result-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
-  .ai-badge-sm {
-    font-size: 11px; font-family: var(--mono);
-    padding: 4px 10px; border-radius: 6px;
-    background: rgba(230,57,70,.1); color: var(--red);
-    border: 1px solid rgba(230,57,70,.2);
-  }
-  .result-body { padding: 24px; }
-  .insight-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px; margin-bottom: 20px;
-  }
-  .insight-card {
-    background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px 16px;
-  }
-  .insight-label { font-size: 10px; color: var(--muted); font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 5px; }
-  .insight-val { font-size: 14px; font-weight: 600; }
-  .ai-insight-text-result {
-    font-size: 14px; color: #9ca3af; line-height: 1.75;
-    background: var(--surface-2); border-left: 3px solid var(--red);
-    padding: 14px 16px; border-radius: 0 8px 8px 0;
-    margin-bottom: 20px;
-  }
-  .ai-insight-text-result.teal { border-left-color: var(--teal); }
-  .ai-insight-text-result strong { color: var(--text); }
-  .ai-insight-text-result em { color: var(--text); font-style: italic; }
-  .result-footer { display: flex; gap: 12px; flex-wrap: wrap; }
+    @keyframes pulse {
 
-  /* ── Buttons ── */
-  .btn-primary {
-    padding: 12px 24px; border-radius: 9px; border: none; cursor: pointer;
-    background: var(--red); color: #fff;
-    font-family: var(--font); font-weight: 600; font-size: 14px;
-    transition: opacity .2s;
-  }
-  .btn-primary.teal { background: var(--teal); color: #0d1412; }
-  .btn-primary:hover { opacity: .85; }
-  .btn-ghost {
-    padding: 12px 20px; border-radius: 9px; cursor: pointer;
-    background: transparent; color: var(--muted);
-    border: 1px solid var(--border);
-    font-family: var(--font); font-size: 14px;
-    transition: color .2s, border-color .2s;
-  }
-  .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
 
-  /* ── XP Toast ── */
-  .xp-toast {
-    position: fixed; bottom: 28px; right: 28px;
-    background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 12px 18px;
-    display: flex; gap: 10px; align-items: center;
-    transform: translateY(80px); opacity: 0;
-    transition: transform .3s, opacity .3s;
-    z-index: 1000;
-  }
-  .xp-toast.show { transform: translateY(0); opacity: 1; }
-  .xp-amount { font-family: var(--mono); font-weight: 600; font-size: 15px; color: var(--red); }
-  .xp-reason { font-size: 13px; color: var(--muted); }
+      50% {
+        opacity: .4;
+        transform: scale(.7)
+      }
+    }
 
-  /* ── Skeleton / Loading ── */
-  .skeleton {
-    background: linear-gradient(90deg, var(--surface-2) 25%, rgba(255,255,255,.04) 50%, var(--surface-2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-  }
-  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-  .skel-title { height: 22px; width: 70%; margin-bottom: 8px; }
-  .skel-sub { height: 13px; width: 50%; margin-bottom: 16px; }
-  .skel-line { height: 13px; width: 100%; margin-bottom: 6px; }
-  .skel-line.short { width: 80%; }
-  .skel-line.shorter { width: 60%; }
-  .skel-metric { height: 36px; border-radius: 8px; }
-  .skel-tag { height: 22px; width: 80px; border-radius: 4px; }
-  .skel-btn { height: 44px; border-radius: 9px; margin-top: 4px; }
-  .skel-icon { height: 40px; width: 40px; border-radius: 8px; margin-bottom: 8px; }
-  .loading-indicator {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; font-family: var(--mono); color: var(--muted);
-    padding: 8px 0;
-  }
-  .loading-dots span {
-    display: inline-block; width: 4px; height: 4px; border-radius: 50%;
-    background: var(--muted); margin: 0 2px;
-    animation: blink 1.2s infinite;
-  }
-  .loading-dots span:nth-child(2) { animation-delay: .2s; }
-  .loading-dots span:nth-child(3) { animation-delay: .4s; }
-  @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+    .page-h1 {
+      font-size: clamp(28px, 5vw, 46px);
+      font-weight: 700;
+      letter-spacing: -.5px;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
 
-  /* ── Error state ── */
-  .error-msg {
-    background: rgba(230,57,70,.08); border: 1px solid rgba(230,57,70,.2);
-    border-radius: 10px; padding: 14px 16px;
-    font-size: 13px; color: #e67e87;
-  }
-  .error-msg strong { color: var(--red); }
-</style>
+    .page-h1 em {
+      color: var(--red);
+      font-style: italic;
+    }
+
+    .page-sub {
+      color: var(--muted);
+      max-width: 560px;
+      font-size: 15px;
+      margin-bottom: 40px;
+    }
+
+    /* ── VS Layout ── */
+    .vs-layout {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .vs-layout {
+        grid-template-columns: 1fr;
+        gap: 16px 0;
+      }
+
+      .vs-divider {
+        flex-direction: row;
+        gap: 0;
+        padding: 0;
+      }
+
+      .vs-line,
+      .vs-line-bottom {
+        flex: 1;
+        height: 1px;
+        width: auto;
+      }
+
+      .vs-badge {
+        margin: 0 16px;
+      }
+    }
+
+    /* ── Strategy Card ── */
+    .strategy-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+
+    .strategy-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .3);
+    }
+
+    .strategy-card.selected-left {
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px rgba(230, 57, 70, .25);
+    }
+
+    .strategy-card.selected-right {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 2px rgba(46, 196, 182, .25);
+    }
+
+    .strategy-card.unselected {
+      opacity: .45;
+      filter: grayscale(.4);
+    }
+
+    /* Card hero */
+    .card-hero {
+      padding: 28px 24px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      position: relative;
+    }
+
+    .card-hero-left {
+      background: linear-gradient(135deg, #1a0a0c 0%, #1e1010 100%);
+    }
+
+    .card-hero-right {
+      background: linear-gradient(135deg, #071415 0%, #0b1c1b 100%);
+    }
+
+    .card-badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+
+    .badge-left {
+      background: rgba(230, 57, 70, .15);
+      color: var(--red);
+      border: 1px solid rgba(230, 57, 70, .25);
+    }
+
+    .badge-right {
+      background: rgba(46, 196, 182, .12);
+      color: var(--teal);
+      border: 1px solid rgba(46, 196, 182, .2);
+    }
+
+    .card-icon {
+      font-size: 36px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -.3px;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    /* Card body */
+    .card-body {
+      padding: 22px 24px 24px;
+    }
+
+    .card-desc {
+      font-size: 14px;
+      color: #b0b5bf;
+      margin-bottom: 20px;
+      line-height: 1.65;
+    }
+
+    .card-desc em {
+      color: var(--text);
+      font-style: italic;
+    }
+
+    /* Trait list */
+    .trait-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .trait-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .trait-icon {
+      font-size: 15px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .trait-text {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .trait-text strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* Metrics strip */
+    .metrics-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      background: var(--surface-2);
+      padding: 12px 10px;
+      text-align: center;
+    }
+
+    .metric-val {
+      font-family: var(--mono);
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .metric-val.red {
+      color: var(--red);
+    }
+
+    .metric-val.teal {
+      color: var(--teal);
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 3px;
+      letter-spacing: .04em;
+    }
+
+    /* Psych tags */
+    .psych-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .psych-tag {
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 3px 9px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    /* Select button */
+    .select-btn {
+      width: 100%;
+      padding: 12px 0;
+      border-radius: 9px;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font);
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: .02em;
+      transition: opacity .2s, transform .15s;
+    }
+
+    .select-btn:hover:not(:disabled) {
+      opacity: .88;
+      transform: translateY(-1px);
+    }
+
+    .select-btn.chosen {
+      opacity: .7;
+      cursor: default;
+    }
+
+    .select-btn-left {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .select-btn-right {
+      background: var(--teal);
+      color: #0d1412;
+    }
+
+    /* ── VS Divider ── */
+    .vs-divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      padding-top: 80px;
+    }
+
+    .vs-line {
+      width: 1px;
+      height: 80px;
+      background: var(--border);
+    }
+
+    .vs-line-bottom {
+      width: 1px;
+      height: 80px;
+      background: var(--border);
+    }
+
+    .vs-badge {
+      font-family: var(--mono);
+      font-weight: 500;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 10px;
+      letter-spacing: .08em;
+    }
+
+    /* ── Result Panel ── */
+    .result-panel {
+      margin-top: 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: none;
+      animation: slideUp .35s ease;
+    }
+
+    .result-panel.visible {
+      display: block;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .result-header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .result-icon {
+      font-size: 32px;
+    }
+
+    .result-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .result-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .ai-badge-sm {
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(230, 57, 70, .1);
+      color: var(--red);
+      border: 1px solid rgba(230, 57, 70, .2);
+    }
+
+    .result-body {
+      padding: 24px;
+    }
+
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .insight-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .insight-label {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: var(--mono);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .insight-val {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .ai-insight-text-result {
+      font-size: 14px;
+      color: #9ca3af;
+      line-height: 1.75;
+      background: var(--surface-2);
+      border-left: 3px solid var(--red);
+      padding: 14px 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 20px;
+    }
+
+    .ai-insight-text-result.teal {
+      border-left-color: var(--teal);
+    }
+
+    .ai-insight-text-result strong {
+      color: var(--text);
+    }
+
+    .ai-insight-text-result em {
+      color: var(--text);
+      font-style: italic;
+    }
+
+    .result-footer {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      padding: 12px 24px;
+      border-radius: 9px;
+      border: none;
+      cursor: pointer;
+      background: var(--red);
+      color: #fff;
+      font-family: var(--font);
+      font-weight: 600;
+      font-size: 14px;
+      transition: opacity .2s;
+    }
+
+    .btn-primary.teal {
+      background: var(--teal);
+      color: #0d1412;
+    }
+
+    .btn-primary:hover {
+      opacity: .85;
+    }
+
+    .btn-ghost {
+      padding: 12px 20px;
+      border-radius: 9px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      font-family: var(--font);
+      font-size: 14px;
+      transition: color .2s, border-color .2s;
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+      border-color: rgba(255, 255, 255, .2);
+    }
+
+    /* ── XP Toast ── */
+    .xp-toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform .3s, opacity .3s;
+      z-index: 1000;
+    }
+
+    .xp-toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .xp-amount {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--red);
+    }
+
+    .xp-reason {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── Skeleton / Loading ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface-2) 25%, rgba(255, 255, 255, .04) 50%, var(--surface-2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    .skel-title {
+      height: 22px;
+      width: 70%;
+      margin-bottom: 8px;
+    }
+
+    .skel-sub {
+      height: 13px;
+      width: 50%;
+      margin-bottom: 16px;
+    }
+
+    .skel-line {
+      height: 13px;
+      width: 100%;
+      margin-bottom: 6px;
+    }
+
+    .skel-line.short {
+      width: 80%;
+    }
+
+    .skel-line.shorter {
+      width: 60%;
+    }
+
+    .skel-metric {
+      height: 36px;
+      border-radius: 8px;
+    }
+
+    .skel-tag {
+      height: 22px;
+      width: 80px;
+      border-radius: 4px;
+    }
+
+    .skel-btn {
+      height: 44px;
+      border-radius: 9px;
+      margin-top: 4px;
+    }
+
+    .skel-icon {
+      height: 40px;
+      width: 40px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .loading-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--muted);
+      padding: 8px 0;
+    }
+
+    .loading-dots span {
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin: 0 2px;
+      animation: blink 1.2s infinite;
+    }
+
+    .loading-dots span:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .loading-dots span:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes blink {
+
+      0%,
+      80%,
+      100% {
+        opacity: .2
+      }
+
+      40% {
+        opacity: 1
+      }
+    }
+
+    /* ── Error state ── */
+    .error-msg {
+      background: rgba(230, 57, 70, .08);
+      border: 1px solid rgba(230, 57, 70, .2);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #e67e87;
+    }
+
+    .error-msg strong {
+      color: var(--red);
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- NAV -->
-<nav>
-  <div class="nav-brand">Pocket<span class="brand-red">PT</span><span class="brand-dot"></span></div>
-  <div class="nav-right">Onboarding</div>
-</nav>
+  <!-- NAV -->
+  <nav>
+    <div class="nav-brand">Pocket<span class="brand-red">PT</span><span class="brand-dot"></span></div>
+    <div class="nav-right">Onboarding</div>
+  </nav>
 
-<div class="page">
+  <div class="page">
 
-  <div class="page-tag">
-    <div class="live-dot"></div>
-    Style Profiling
+    <div class="page-tag">
+      <div class="live-dot"></div>
+      Style Profiling
+    </div>
+    <h1 class="page-h1">Which strategy feels<br>like <em>you</em>?</h1>
+    <p class="page-sub">Choose the trading style that best matches how you think and make decisions. This personalises
+      your entire curriculum — lessons, scenarios, and AI tutor feedback.</p>
+
+    <!-- VS Cards -->
+    <div class="vs-layout">
+      <div class="strategy-card" id="card-left">
+        <div class="card-hero card-hero-left">
+          <div class="card-badge badge-left">Strategy A</div>
+          <div id="hero-left-content">
+            <!-- skeleton -->
+            <div class="skel-icon skeleton"></div>
+            <div class="skel-title skeleton"></div>
+            <div class="skel-sub skeleton"></div>
+          </div>
+        </div>
+        <div class="card-body" id="body-left">
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+            <div class="skeleton skel-line"></div>
+            <div class="skeleton skel-line short"></div>
+            <div class="skeleton skel-line shorter"></div>
+          </div>
+          <div class="metrics-strip">
+            <div class="metric">
+              <div class="skeleton skel-metric"></div>
+            </div>
+            <div class="metric">
+              <div class="skeleton skel-metric"></div>
+            </div>
+            <div class="metric">
+              <div class="skeleton skel-metric"></div>
+            </div>
+          </div>
+          <div class="psych-tags">
+            <div class="skeleton skel-tag"></div>
+            <div class="skeleton skel-tag"></div>
+            <div class="skeleton skel-tag"></div>
+          </div>
+          <div class="skeleton skel-btn"></div>
+          <div class="loading-indicator">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+            AI generating profile...
+          </div>
+        </div>
+      </div>
+
+      <div class="vs-divider">
+        <div class="vs-line"></div>
+        <div class="vs-badge">VS</div>
+        <div class="vs-line-bottom"></div>
+      </div>
+
+      <div class="strategy-card" id="card-right">
+        <div class="card-hero card-hero-right">
+          <div class="card-badge badge-right">Strategy B</div>
+          <div id="hero-right-content">
+            <div class="skel-icon skeleton"></div>
+            <div class="skel-title skeleton"></div>
+            <div class="skel-sub skeleton"></div>
+          </div>
+        </div>
+        <div class="card-body" id="body-right">
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+            <div class="skeleton skel-line"></div>
+            <div class="skeleton skel-line short"></div>
+            <div class="skeleton skel-line shorter"></div>
+          </div>
+          <div class="metrics-strip">
+            <div class="metric">
+              <div class="skeleton skel-metric"></div>
+            </div>
+            <div class="metric">
+              <div class="skeleton skel-metric"></div>
+            </div>
+            <div class="metric">
+              <div class="skeleton skel-metric"></div>
+            </div>
+          </div>
+          <div class="psych-tags">
+            <div class="skeleton skel-tag"></div>
+            <div class="skeleton skel-tag"></div>
+            <div class="skeleton skel-tag"></div>
+          </div>
+          <div class="skeleton skel-btn"></div>
+          <div class="loading-indicator">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+            AI generating profile...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result panel (hidden until selection + AI done) -->
+    <div class="result-panel" id="resultPanel">
+      <div class="result-header">
+        <div class="result-header-left">
+          <div class="result-icon" id="resultIcon">🚀</div>
+          <div>
+            <div class="result-title" id="resultTitle">Loading…</div>
+            <div class="result-desc" id="resultDesc">Generating your personalised profile</div>
+          </div>
+        </div>
+        <div class="ai-badge-sm">🤖 AI Profile Ready</div>
+      </div>
+      <div class="result-body">
+        <div class="insight-grid" id="insightGrid">
+          <div class="insight-card">
+            <div class="skeleton skel-line" style="height:40px;border-radius:6px"></div>
+          </div>
+          <div class="insight-card">
+            <div class="skeleton skel-line" style="height:40px;border-radius:6px"></div>
+          </div>
+          <div class="insight-card">
+            <div class="skeleton skel-line" style="height:40px;border-radius:6px"></div>
+          </div>
+          <div class="insight-card">
+            <div class="skeleton skel-line" style="height:40px;border-radius:6px"></div>
+          </div>
+        </div>
+        <div class="ai-insight-text-result" id="aiResultText">
+          <div class="loading-indicator">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+            AI personalising your result…
+          </div>
+        </div>
+        <div class="result-footer" id="resultFooter"></div>
+      </div>
+    </div>
+
   </div>
-  <h1 class="page-h1">Which strategy feels<br>like <em>you</em>?</h1>
-  <p class="page-sub">Choose the trading style that best matches how you think and make decisions. This personalises your entire curriculum — lessons, scenarios, and AI tutor feedback.</p>
 
-  <!-- VS Cards -->
-  <div class="vs-layout">
-    <div class="strategy-card" id="card-left" onclick="selectStrategy('left')">
-      <div class="card-hero card-hero-left">
-        <div class="card-badge badge-left">Strategy A</div>
-        <div id="hero-left-content">
-          <!-- skeleton -->
-          <div class="skel-icon skeleton"></div>
-          <div class="skel-title skeleton"></div>
-          <div class="skel-sub skeleton"></div>
-        </div>
-      </div>
-      <div class="card-body" id="body-left">
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
-          <div class="skeleton skel-line"></div>
-          <div class="skeleton skel-line short"></div>
-          <div class="skeleton skel-line shorter"></div>
-        </div>
-        <div class="metrics-strip">
-          <div class="metric"><div class="skeleton skel-metric"></div></div>
-          <div class="metric"><div class="skeleton skel-metric"></div></div>
-          <div class="metric"><div class="skeleton skel-metric"></div></div>
-        </div>
-        <div class="psych-tags">
-          <div class="skeleton skel-tag"></div>
-          <div class="skeleton skel-tag"></div>
-          <div class="skeleton skel-tag"></div>
-        </div>
-        <div class="skeleton skel-btn"></div>
-        <div class="loading-indicator">
-          <div class="loading-dots"><span></span><span></span><span></span></div>
-          AI generating profile...
-        </div>
-      </div>
-    </div>
-
-    <div class="vs-divider">
-      <div class="vs-line"></div>
-      <div class="vs-badge">VS</div>
-      <div class="vs-line-bottom"></div>
-    </div>
-
-    <div class="strategy-card" id="card-right" onclick="selectStrategy('right')">
-      <div class="card-hero card-hero-right">
-        <div class="card-badge badge-right">Strategy B</div>
-        <div id="hero-right-content">
-          <div class="skel-icon skeleton"></div>
-          <div class="skel-title skeleton"></div>
-          <div class="skel-sub skeleton"></div>
-        </div>
-      </div>
-      <div class="card-body" id="body-right">
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
-          <div class="skeleton skel-line"></div>
-          <div class="skeleton skel-line short"></div>
-          <div class="skeleton skel-line shorter"></div>
-        </div>
-        <div class="metrics-strip">
-          <div class="metric"><div class="skeleton skel-metric"></div></div>
-          <div class="metric"><div class="skeleton skel-metric"></div></div>
-          <div class="metric"><div class="skeleton skel-metric"></div></div>
-        </div>
-        <div class="psych-tags">
-          <div class="skeleton skel-tag"></div>
-          <div class="skeleton skel-tag"></div>
-          <div class="skeleton skel-tag"></div>
-        </div>
-        <div class="skeleton skel-btn"></div>
-        <div class="loading-indicator">
-          <div class="loading-dots"><span></span><span></span><span></span></div>
-          AI generating profile...
-        </div>
-      </div>
-    </div>
+  <!-- XP Toast -->
+  <div class="xp-toast" id="xpToast">
+    <div class="xp-amount" id="xpAmount">+20 XP</div>
+    <div class="xp-reason" id="xpReason">Profile set!</div>
   </div>
 
-  <!-- Result panel (hidden until selection + AI done) -->
-  <div class="result-panel" id="resultPanel">
-    <div class="result-header">
-      <div class="result-header-left">
-        <div class="result-icon" id="resultIcon">🚀</div>
-        <div>
-          <div class="result-title" id="resultTitle">Loading…</div>
-          <div class="result-desc" id="resultDesc">Generating your personalised profile</div>
-        </div>
-      </div>
-      <div class="ai-badge-sm">🤖 AI Profile Ready</div>
-    </div>
-    <div class="result-body">
-      <div class="insight-grid" id="insightGrid">
-        <div class="insight-card"><div class="skeleton skel-line" style="height:40px;border-radius:6px"></div></div>
-        <div class="insight-card"><div class="skeleton skel-line" style="height:40px;border-radius:6px"></div></div>
-        <div class="insight-card"><div class="skeleton skel-line" style="height:40px;border-radius:6px"></div></div>
-        <div class="insight-card"><div class="skeleton skel-line" style="height:40px;border-radius:6px"></div></div>
-      </div>
-      <div class="ai-insight-text-result" id="aiResultText">
-        <div class="loading-indicator">
-          <div class="loading-dots"><span></span><span></span><span></span></div>
-          AI personalising your result…
-        </div>
-      </div>
-      <div class="result-footer" id="resultFooter"></div>
-    </div>
-  </div>
-
-</div>
-
-<!-- XP Toast -->
-<div class="xp-toast" id="xpToast">
-  <div class="xp-amount" id="xpAmount">+20 XP</div>
-  <div class="xp-reason" id="xpReason">Profile set!</div>
-</div>
-
-<script src="../js/trading_strategy.js" type="module"></script>
+  <script src="../js/trading_strategy.js" type="module"></script>
 </body>
+
 </html>
