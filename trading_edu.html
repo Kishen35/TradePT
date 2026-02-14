@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketPT — Learn Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Deriv Token System (light theme, exact values from Deriv source) ── */
+:root {
+  /* Backgrounds */
+  --bg:            #ffffff;
+  --surface:       #f2f3f4;
+  --panel:         #ffffff;
+  --section:       #f2f3f4;
+  --section-2:     #fafafa;
+
+  /* Borders */
+  --border:        #d6dadb;
+  --border-hover:  #999999;
+  --border-active: #ff444f;
+  --border-divider:#f2f3f4;
+
+  /* Text */
+  --txt:           #333333;
+  --txt-prominent: #333333;
+  --txt-muted:     #999999;
+  --txt-disabled:  #999999;
+  --txt-hint:      #333333;
+
+  /* Deriv brand colours */
+  --red:           #ff444f;      /* brand-red-coral — primary CTA */
+  --red-hover:     #eb3e48;
+  --red-section:   #d33636;
+  --red-light:     rgba(255,68,79,0.08);
+  --red-light-2:   rgba(255,68,79,0.16);
+
+  /* Profit / Loss */
+  --profit:        #4bb4b3;      /* purchase-main-1 */
+  --profit-section:#3d9494;
+  --profit-light:  rgba(75,180,179,0.12);
+  --loss:          #ec3f3f;      /* text-loss-danger */
+  --loss-light:    rgba(236,63,63,0.10);
+
+  /* Status colours */
+  --warning:       #ffad3a;
+  --warning-light: rgba(255,173,58,0.16);
+  --info:          #377cfc;
+  --info-light:    rgba(55,124,252,0.12);
+  --blue:          #0796e0;
+
+  /* Gradients */
+  --gradient-green: linear-gradient(90deg, #1db193, #09da7a);
+  --gradient-red:   linear-gradient(90deg, #ff6444, #ff444f);
+  --gradient-blue:  linear-gradient(90deg, #00a8af, #04cfd8);
+
+  /* Shadows */
+  --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+  --shadow-drop:   0 4px 16px rgba(0,0,0,0.08);
+  --shadow-menu:   0 8px 24px rgba(0,0,0,0.16);
+
+  /* Type */
+  --font: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%; min-height: 100vh;
+  background: var(--surface);
+  color: var(--txt);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+button { font-family: var(--font); cursor: pointer; }
+input, select, textarea { font-family: var(--font); }
+
+/* ── Scrollbar (Deriv-style thin) ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ── Layout ── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ══════════════════════════════════════
+   NAV — matches Deriv top bar exactly
+══════════════════════════════════════ */
+nav {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-divider);
+  box-shadow: 0 1px 0 var(--border-divider);
+  position: sticky; top: 0; z-index: 200;
+  padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 48px;
+}
+.nav-brand {
+  font-size: 16px; font-weight: 700;
+  color: var(--txt-prominent);
+  letter-spacing: -0.2px;
+  display: flex; align-items: center; gap: 2px;
+}
+.nav-brand .brand-red { color: var(--red); }
+.nav-brand .brand-dot {
+  width: 6px; height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  margin-left: 3px; margin-bottom: 6px;
+}
+
+.nav-tabs {
+  display: flex; gap: 0;
+  height: 100%;
+}
+.nav-tab {
+  height: 100%;
+  padding: 0 16px;
+  background: transparent; border: none;
+  color: var(--txt-muted);
+  font-size: 13px; font-weight: 500;
+  position: relative;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+.nav-tab::after {
+  content: '';
+  position: absolute; bottom: 0; left: 16px; right: 16px;
+  height: 2px; background: var(--red);
+  transform: scaleX(0); transition: transform 0.15s;
+  border-radius: 2px 2px 0 0;
+}
+.nav-tab:hover { color: var(--txt-prominent); }
+.nav-tab.active { color: var(--red); font-weight: 600; }
+.nav-tab.active::after { transform: scaleX(1); }
+
+.nav-right {
+  display: flex; align-items: center; gap: 12px;
+}
+.xp-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px; font-weight: 600;
+  color: var(--txt);
+}
+.xp-chip .xp-val { color: var(--red); font-weight: 700; }
+.streak-chip {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600; color: var(--warning);
+}
+
+/* ══════════════════════════════════════
+   PAGE HEADER — Deriv section header style
+══════════════════════════════════════ */
+.page-header {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-divider);
+  padding: 20px 24px 18px;
+}
+.page-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--red-light);
+  color: var(--red);
+  font-size: 11px; font-weight: 600;
+  padding: 3px 8px; border-radius: 4px;
+  letter-spacing: 0.3px; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.live-dot-tag {
+  width: 5px; height: 5px;
+  background: var(--red); border-radius: 50%;
+  animation: derivPulse 2s infinite;
+}
+@keyframes derivPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.page-header h1 {
+  font-size: 22px; font-weight: 700;
+  color: var(--txt-prominent);
+  letter-spacing: -0.3px; margin-bottom: 4px;
+  line-height: 1.2;
+}
+.page-header h1 em {
+  font-style: normal; color: var(--red);
+}
+.page-header p {
+  font-size: 13px; color: var(--txt-muted);
+  max-width: 520px; line-height: 1.5;
+}
+
+/* ══════════════════════════════════════
+   MAIN CONTENT
+══════════════════════════════════════ */
+.main-content {
+  padding: 20px 24px 40px;
+  display: flex; flex-direction: column; gap: 24px;
+  max-width: 1100px; width: 100%;
+  margin: 0 auto;
+}
+
+/* Section headers */
+.section-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: 11px; font-weight: 700;
+  color: var(--txt-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.section-link {
+  font-size: 12px; color: var(--red);
+  background: none; border: none;
+  font-weight: 500; cursor: pointer;
+  transition: color 0.15s;
+}
+.section-link:hover { color: var(--red-hover); }
+
+/* ══════════════════════════════════════
+   DERIV-STYLE CARDS (white, bordered)
+══════════════════════════════════════ */
+.dc-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ══════════════════════════════════════
+   STREAK BANNER
+══════════════════════════════════════ */
+.streak-banner {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warning);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow-card);
+}
+.streak-left { display: flex; align-items: center; gap: 12px; }
+.streak-icon { font-size: 24px; }
+.streak-count {
+  font-size: 15px; font-weight: 700;
+  color: var(--warning);
+}
+.streak-sub { font-size: 12px; color: var(--txt-muted); margin-top: 1px; }
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--red);
+  color: var(--red);
+  padding: 6px 14px; border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  transition: all 0.15s;
+}
+.btn-secondary:hover { background: var(--red-light); }
+
+/* ══════════════════════════════════════
+   PATH CARDS
+══════════════════════════════════════ */
+.path-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.path-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px;
+  cursor: pointer; transition: all 0.15s;
+  position: relative; overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.path-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-drop);
+  transform: translateY(-1px);
+}
+.path-card.active { border-color: var(--red); }
+.path-card.active::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--gradient-red);
+}
+.path-badge {
+  position: absolute; top: 10px; right: 10px;
+  font-size: 10px; font-weight: 600; padding: 2px 7px;
+  border-radius: 4px; font-family: var(--font-mono);
+  background: var(--surface); color: var(--txt-muted);
+  border: 1px solid var(--border);
+}
+.path-badge.badge-active { background: var(--red-light); color: var(--red); border-color: transparent; }
+.path-badge.badge-new { background: var(--info-light); color: var(--info); border-color: transparent; }
+.path-badge.badge-locked { color: var(--txt-disabled); }
+.path-icon { font-size: 22px; margin-bottom: 8px; }
+.path-title { font-size: 13px; font-weight: 600; color: var(--txt-prominent); margin-bottom: 4px; }
+.path-desc { font-size: 12px; color: var(--txt-muted); line-height: 1.4; margin-bottom: 12px; }
+.progress-row { display: flex; align-items: center; gap: 8px; }
+.progress-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 2px; transition: width 0.6s; }
+.fill-red { background: var(--red); }
+.fill-teal { background: var(--profit); }
+.fill-blue { background: var(--info); }
+.fill-gold { background: var(--warning); }
+.progress-pct { font-family: var(--font-mono); font-size: 10px; color: var(--txt-muted); min-width: 26px; text-align: right; }
+
+/* ══════════════════════════════════════
+   CONCEPT CARDS
+══════════════════════════════════════ */
+.concepts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.concept-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px;
+  cursor: pointer; transition: all 0.15s;
+  box-shadow: var(--shadow-card);
+}
+.concept-card:hover { border-color: var(--red); box-shadow: var(--shadow-drop); }
+.concept-card.done { border-color: rgba(75,180,179,0.4); }
+.concept-icon { font-size: 20px; margin-bottom: 6px; }
+.concept-title { font-size: 12px; font-weight: 600; color: var(--txt-prominent); margin-bottom: 3px; }
+.concept-desc { font-size: 11px; color: var(--txt-muted); line-height: 1.4; }
+.concept-status { margin-top: 8px; font-size: 10px; font-family: var(--font-mono); }
+.concept-status.done { color: var(--profit); }
+.concept-status.todo { color: var(--txt-muted); }
+
+/* ══════════════════════════════════════
+   TWO COLUMN
+══════════════════════════════════════ */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ══════════════════════════════════════
+   SKILL METERS
+══════════════════════════════════════ */
+.skill-card { padding: 16px; }
+.skill-meters { display: flex; flex-direction: column; gap: 10px; }
+.skill-row { display: flex; align-items: center; gap: 10px; }
+.skill-name { font-size: 12px; color: var(--txt); width: 120px; flex-shrink: 0; }
+.skill-bar { flex: 1; height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+.skill-fill { height: 100%; border-radius: 3px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.skill-val { font-family: var(--font-mono); font-size: 10px; color: var(--txt-muted); width: 24px; text-align: right; }
+
+/* ══════════════════════════════════════
+   AI INSIGHT CARD
+══════════════════════════════════════ */
+.ai-insight-card { padding: 16px; }
+.ai-insight-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.ai-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--red-light); color: var(--red);
+  font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.3px;
+}
+.ai-insight-text {
+  font-size: 13px; line-height: 1.7; color: var(--txt-muted);
+}
+.ai-insight-text strong { color: var(--txt-prominent); font-weight: 600; }
+.pill-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 10px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--info); font-size: 11px; font-weight: 500;
+  padding: 5px 12px; border-radius: 4px;
+  cursor: pointer; transition: all 0.15s;
+}
+.pill-link:hover { border-color: var(--info); background: var(--info-light); }
+
+/* ══════════════════════════════════════
+   SCENARIO CARD
+══════════════════════════════════════ */
+.scenario-card { overflow: hidden; }
+.scenario-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.scenario-header-left { display: flex; align-items: center; gap: 8px; }
+.chip {
+  font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: 4px; letter-spacing: 0.3px; text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+.chip-default { background: var(--red-light); color: var(--red); }
+.chip-teal { background: var(--profit-light); color: var(--profit); }
+.chip-red { background: var(--loss-light); color: var(--loss); }
+.chip-live {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--warning-light); color: var(--warning);
+  font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: 4px; font-family: var(--font-mono);
+}
+.live-d { width: 5px; height: 5px; background: var(--warning); border-radius: 50%; animation: derivPulse 1.5s infinite; }
+.scenario-counter { font-family: var(--font-mono); font-size: 11px; color: var(--txt-muted); }
+
+.scenario-body { padding: 18px; }
+.market-ctx {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--info);
+  border-radius: 6px; padding: 12px 14px; margin-bottom: 14px;
+}
+.ctx-label {
+  font-size: 10px; font-weight: 700; color: var(--info);
+  letter-spacing: 0.5px; text-transform: uppercase;
+  font-family: var(--font-mono); margin-bottom: 6px;
+}
+.ctx-text { font-size: 12px; line-height: 1.6; color: var(--txt-muted); margin-bottom: 8px; }
+.market-row { display: flex; gap: 20px; flex-wrap: wrap; }
+.market-datum { display: flex; flex-direction: column; gap: 1px; }
+.datum-label { font-size: 10px; color: var(--txt-muted); font-family: var(--font-mono); }
+.datum-val { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+.datum-val.up { color: var(--profit); }
+.datum-val.down { color: var(--loss); }
+.datum-val.neutral { color: var(--txt-prominent); }
+
+.scenario-question {
+  font-size: 16px; font-weight: 600; color: var(--txt-prominent);
+  line-height: 1.4; margin-bottom: 14px;
+}
+.scenario-question em { font-style: normal; color: var(--red); }
+
+.choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.choice-btn {
+  padding: 12px 14px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--txt);
+  font-size: 12px; cursor: pointer;
+  transition: all 0.15s; text-align: left; line-height: 1.4;
+}
+.choice-btn:hover { border-color: var(--red); background: var(--red-light); }
+.choice-btn.selected-correct { border-color: var(--profit); background: var(--profit-light); color: var(--profit-section); }
+.choice-btn.selected-wrong { border-color: var(--loss); background: var(--loss-light); color: var(--loss); }
+.choice-btn.reveal-correct { border-color: var(--profit); background: rgba(75,180,179,0.06); }
+.choice-btn:disabled { cursor: default; }
+.choice-label {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 4px; font-family: var(--font-mono);
+  font-size: 10px; font-weight: 600; margin-right: 8px; flex-shrink: 0;
+}
+
+/* AI Explanation */
+.ai-explain {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px;
+  display: none; animation: fadeIn 0.25s ease;
+}
+.ai-explain.visible { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.explain-hd {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.ai-dot {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: var(--gradient-red);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+.explain-label { font-size: 12px; font-weight: 600; color: var(--txt-prominent); }
+.explain-label span { color: var(--txt-muted); font-weight: 400; }
+.explain-text { font-size: 13px; line-height: 1.7; color: var(--txt); }
+.explain-text strong { color: var(--txt-prominent); font-weight: 600; }
+.explain-text .hl { background: var(--warning-light); color: #b3760d; padding: 1px 4px; border-radius: 3px; }
+.followup-row {
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.followup-pill {
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--info); font-size: 11px; font-weight: 500;
+  padding: 4px 10px; border-radius: 4px;
+  cursor: pointer; transition: all 0.15s;
+}
+.followup-pill:hover { border-color: var(--info); background: var(--info-light); }
+
+.scenario-footer {
+  display: flex; justify-content: space-between; align-items: center; margin-top: 14px;
+}
+.btn-ghost {
+  padding: 7px 16px;
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--txt); border-radius: 4px;
+  font-size: 12px; font-weight: 500;
+  transition: all 0.15s;
+}
+.btn-ghost:hover { border-color: var(--border-hover); }
+.btn-primary {
+  padding: 7px 18px;
+  background: var(--red); border: none;
+  color: #fff; border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--red-hover); }
+
+/* ══════════════════════════════════════
+   TUTOR CHAT
+══════════════════════════════════════ */
+.tutor-card { overflow: hidden; }
+.chat-messages {
+  padding: 18px; min-height: 200px; max-height: 360px;
+  overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  background: var(--section-2);
+  border-bottom: 1px solid var(--border);
+}
+.msg { display: flex; gap: 10px; align-items: flex-start; }
+.msg.user { flex-direction: row-reverse; }
+.msg-av {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.msg-av.ai { background: var(--gradient-red); }
+.msg-av.user { background: var(--surface); border: 1px solid var(--border); }
+.bubble {
+  max-width: 80%; padding: 10px 13px;
+  font-size: 13px; line-height: 1.6; border-radius: 8px;
+}
+.msg.ai .bubble {
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--txt); border-top-left-radius: 3px;
+}
+.msg.user .bubble {
+  background: var(--red-light); border: 1px solid rgba(255,68,79,0.2);
+  color: var(--txt); border-top-right-radius: 3px;
+}
+.bubble strong { color: var(--txt-prominent); font-weight: 600; }
+.bubble .profit-tag {
+  display: inline-block; background: var(--profit-light);
+  color: var(--profit-section); font-size: 11px; padding: 1px 6px;
+  border-radius: 4px; font-family: var(--font-mono); font-weight: 500;
+}
+
+.quick-asks {
+  padding: 10px 16px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.quick-ask {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--txt-muted); font-size: 11px; font-weight: 500;
+  padding: 4px 10px; border-radius: 4px;
+  cursor: pointer; transition: all 0.15s;
+}
+.quick-ask:hover { color: var(--red); border-color: var(--red); background: var(--red-light); }
+
+.chat-input-row {
+  padding: 12px 16px;
+  display: flex; gap: 8px; align-items: center;
+  background: var(--bg);
+}
+.chat-input {
+  flex: 1; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 9px 12px; color: var(--txt); font-size: 13px; outline: none;
+  transition: border-color 0.15s;
+}
+.chat-input:focus { border-color: var(--red); }
+.chat-input::placeholder { color: var(--txt-muted); }
+.chat-send {
+  width: 36px; height: 36px;
+  background: var(--red); border: none; border-radius: 4px;
+  color: #fff; font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.chat-send:hover { background: var(--red-hover); }
+.chat-send:disabled { background: var(--border); cursor: default; }
+
+/* Typing */
+.typing-row { display: flex; gap: 4px; align-items: center; padding: 2px 0; }
+.typing-dot {
+  width: 6px; height: 6px; background: var(--txt-muted); border-radius: 50%;
+  animation: typeBounce 1.2s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typeBounce { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-5px);opacity:1} }
+
+/* ══════════════════════════════════════
+   TRADE AUTOPSY
+══════════════════════════════════════ */
+.autopsy-card { padding: 18px; }
+.input-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px; margin-bottom: 12px;
+}
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field-label {
+  font-size: 10px; font-weight: 700; color: var(--txt-muted);
+  text-transform: uppercase; letter-spacing: 0.4px; font-family: var(--font-mono);
+}
+.field-input {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--txt); border-radius: 4px; padding: 8px 10px;
+  font-family: var(--font-mono); font-size: 12px; outline: none;
+  transition: border-color 0.15s; width: 100%;
+}
+.field-input:focus { border-color: var(--red); background: var(--bg); }
+.field-input::placeholder { color: var(--txt-muted); }
+select.field-input { cursor: pointer; }
+select.field-input option { background: var(--bg); }
+.autopsy-run {
+  width: 100%; padding: 10px;
+  background: var(--red); border: none; border-radius: 4px;
+  color: #fff; font-size: 13px; font-weight: 600;
+  letter-spacing: 0.2px; cursor: pointer;
+  transition: background 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.autopsy-run:hover { background: var(--red-hover); }
+
+.autopsy-result {
+  margin-top: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; display: none;
+}
+.autopsy-result.visible { display: block; animation: fadeIn 0.25s ease; }
+.verdict-row {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 12px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.verdict-icon { font-size: 20px; }
+.verdict-title { font-size: 14px; font-weight: 700; }
+.verdict-title.win { color: var(--profit); }
+.verdict-title.loss { color: var(--loss); }
+.verdict-sub { font-size: 11px; color: var(--txt-muted); margin-top: 2px; font-family: var(--font-mono); }
+.lessons { display: flex; flex-direction: column; gap: 8px; }
+.lesson-row { display: flex; gap: 10px; align-items: flex-start; }
+.lesson-badge {
+  width: 20px; height: 20px; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-family: var(--font-mono); color: var(--red); font-weight: 700;
+}
+.lesson-text { font-size: 12px; line-height: 1.5; color: var(--txt-muted); }
+.lesson-text strong { color: var(--txt-prominent); font-weight: 600; }
+.next-step-block { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.next-step-label {
+  font-size: 10px; font-weight: 700; color: var(--txt-muted);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  font-family: var(--font-mono); margin-bottom: 6px;
+}
+.next-step-text { font-size: 13px; line-height: 1.6; color: var(--txt); }
+.next-step-actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ══════════════════════════════════════
+   TAB PAGES
+══════════════════════════════════════ */
+.tab-page { display: none; }
+.tab-page.active { display: block; }
+
+/* ══════════════════════════════════════
+   XP TOAST (Deriv notification style)
+══════════════════════════════════════ */
+.xp-toast {
+  position: fixed; bottom: 20px; right: 20px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-left: 3px solid var(--profit);
+  border-radius: 6px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow-menu); z-index: 9999;
+  transform: translateX(120%); opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 200px;
+}
+.xp-toast.show { transform: translateX(0); opacity: 1; }
+.xp-amount {
+  font-size: 18px; font-weight: 700; color: var(--profit);
+  font-family: var(--font-mono);
+}
+.xp-label { font-size: 11px; color: var(--txt-muted); }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ════════════════ NAV ════════════════ -->
+<nav>
+  <div class="nav-brand">
+    Pocket<span class="brand-red">PT</span><span class="brand-dot"></span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('learn')">Learn</button>
+    <button class="nav-tab" onclick="switchTab('scenarios')">Scenarios</button>
+    <button class="nav-tab" onclick="switchTab('tutor')">AI Tutor</button>
+    <button class="nav-tab" onclick="switchTab('autopsy')">Trade Autopsy</button>
+  </div>
+  <div class="nav-right">
+    <div class="streak-chip">🔥 <strong id="streakCount">3</strong>d</div>
+    <div class="xp-chip">⚡ <span class="xp-val" id="xpCount">240</span> XP</div>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════
+     LEARN TAB
+════════════════════════════════════════ -->
+<div id="tab-learn" class="tab-page active">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>Personalised Curriculum</div>
+    <h1>Learn the way <em>you</em> trade.</h1>
+    <p>AI-powered lessons built around your instruments, your trades, and your learning style — not generic YouTube content.</p>
+  </div>
+  <div class="main-content">
+
+    <div class="streak-banner">
+      <div class="streak-left">
+        <div class="streak-icon">🔥</div>
+        <div>
+          <div class="streak-count">3-Day Streak</div>
+          <div class="streak-sub">You've learned something new every day this week</div>
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="switchTab('scenarios')">Keep it going →</button>
+    </div>
+
+    <div>
+      <div class="section-hd">
+        <div class="section-title">Your Learning Paths</div>
+        <button class="section-link" onclick="showToast('Rebuilding curriculum from your trades...')">Rebuild Curriculum</button>
+      </div>
+      <div class="path-grid">
+        <div class="path-card active" onclick="switchTab('scenarios')">
+          <div class="path-badge badge-active">Active</div>
+          <div class="path-icon">📈</div>
+          <div class="path-title">Technical Analysis</div>
+          <div class="path-desc">RSI, MACD, support/resistance. Tailored to synthetic indices.</div>
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill fill-red" style="width:42%"></div></div>
+            <div class="progress-pct">42%</div>
+          </div>
+        </div>
+        <div class="path-card">
+          <div class="path-badge badge-new">New</div>
+          <div class="path-icon">🧠</div>
+          <div class="path-title">Trading Psychology</div>
+          <div class="path-desc">Why you revenge trade after losses. How to stop.</div>
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill fill-teal" style="width:8%"></div></div>
+            <div class="progress-pct">8%</div>
+          </div>
+        </div>
+        <div class="path-card">
+          <div class="path-badge">0 / 8</div>
+          <div class="path-icon">⚖️</div>
+          <div class="path-title">Risk Management</div>
+          <div class="path-desc">Position sizing, stop-loss logic, risk-reward ratios.</div>
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill fill-blue" style="width:0%"></div></div>
+            <div class="progress-pct">0%</div>
+          </div>
+        </div>
+        <div class="path-card">
+          <div class="path-badge badge-locked">🔒 Locked</div>
+          <div class="path-icon">🏆</div>
+          <div class="path-title">Advanced Strategies</div>
+          <div class="path-desc">Wyckoff, ICT concepts, market structure shifts.</div>
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill fill-gold" style="width:0%"></div></div>
+            <div class="progress-pct">0%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-hd">
+        <div class="section-title">Concepts to master</div>
+        <button class="section-link">View all →</button>
+      </div>
+      <div class="concepts-grid">
+        <div class="concept-card done" onclick="learnConcept('RSI')">
+          <div class="concept-icon">📊</div>
+          <div class="concept-title">RSI</div>
+          <div class="concept-desc">Relative Strength Index — momentum oscillator</div>
+          <div class="concept-status done">✓ Completed</div>
+        </div>
+        <div class="concept-card done" onclick="learnConcept('Support & Resistance')">
+          <div class="concept-icon">🧱</div>
+          <div class="concept-title">Support & Resistance</div>
+          <div class="concept-desc">Key price levels that matter</div>
+          <div class="concept-status done">✓ Completed</div>
+        </div>
+        <div class="concept-card" onclick="learnConcept('MACD')">
+          <div class="concept-icon">〰️</div>
+          <div class="concept-title">MACD</div>
+          <div class="concept-desc">Trend & momentum signal crossovers</div>
+          <div class="concept-status todo">→ Up next</div>
+        </div>
+        <div class="concept-card" onclick="learnConcept('Stop Loss Placement')">
+          <div class="concept-icon">🛡️</div>
+          <div class="concept-title">Stop Loss Placement</div>
+          <div class="concept-desc">Where to place stops and why</div>
+          <div class="concept-status todo">→ Start here</div>
+        </div>
+        <div class="concept-card" onclick="learnConcept('Candlestick Patterns')">
+          <div class="concept-icon">🕯️</div>
+          <div class="concept-title">Candlestick Patterns</div>
+          <div class="concept-desc">Doji, engulfing, hammer, shooting star</div>
+          <div class="concept-status todo">— Not started</div>
+        </div>
+        <div class="concept-card" onclick="learnConcept('Risk-Reward Ratio')">
+          <div class="concept-icon">⚖️</div>
+          <div class="concept-title">Risk:Reward</div>
+          <div class="concept-desc">How to calculate and why 1:2 matters</div>
+          <div class="concept-status todo">— Not started</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-hd"><div class="section-title">Your skill profile</div></div>
+        <div class="dc-card skill-card">
+          <div class="skill-meters">
+            <div class="skill-row">
+              <div class="skill-name">Technical Analysis</div>
+              <div class="skill-bar"><div class="skill-fill" style="width:42%;background:var(--red)"></div></div>
+              <div class="skill-val">42</div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-name">Risk Management</div>
+              <div class="skill-bar"><div class="skill-fill" style="width:18%;background:var(--info)"></div></div>
+              <div class="skill-val">18</div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-name">Psychology</div>
+              <div class="skill-bar"><div class="skill-fill" style="width:30%;background:var(--warning)"></div></div>
+              <div class="skill-val">30</div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-name">Market Structure</div>
+              <div class="skill-bar"><div class="skill-fill" style="width:10%;background:var(--profit)"></div></div>
+              <div class="skill-val">10</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-hd"><div class="section-title">AI insight</div></div>
+        <div class="dc-card ai-insight-card">
+          <div class="ai-insight-header">
+            <div class="ai-badge">🤖 PocketPT</div>
+            <span style="font-size:11px;color:var(--txt-muted);">Based on your last 5 trades</span>
+          </div>
+          <p class="ai-insight-text">
+            Your <strong>entries are strong</strong>, but you're closing trades too early — averaging only
+            <span style="color:var(--loss);font-weight:600;">0.8R</span> when your setups justify
+            <span style="color:var(--profit);font-weight:600;">2.0R+</span>. Your biggest growth area right now
+            is <strong>trade management after entry</strong>. I've added a lesson specifically about this.
+          </p>
+          <button class="pill-link" onclick="switchTab('tutor');askTutor('Why do I keep closing trades too early?')">Ask me about this →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCENARIOS TAB
+════════════════════════════════════════ -->
+<div id="tab-scenarios" class="tab-page">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>Live Market Scenarios</div>
+    <h1>Would you <em>buy</em> or sell?</h1>
+    <p>Real market conditions, real decisions. Understand the "why" before you risk real money.</p>
+  </div>
+  <div class="main-content">
+    <div class="dc-card scenario-card">
+      <div class="scenario-header">
+        <div class="scenario-header-left">
+          <div class="chip chip-default" id="scenarioChip">GOLD / XAU</div>
+          <div class="chip-live"><div class="live-d"></div>LIVE DATA</div>
+        </div>
+        <div class="scenario-counter">Question <span id="qNum">1</span>/4</div>
+      </div>
+      <div class="scenario-body">
+        <div class="market-ctx">
+          <div class="ctx-label">📡 Market Snapshot</div>
+          <div class="ctx-text" id="scenarioContextText"></div>
+          <div class="market-row" id="marketDataRow"></div>
+        </div>
+        <div class="scenario-question" id="scenarioQuestion"></div>
+        <div class="choice-grid" id="choiceGrid"></div>
+        <div class="ai-explain" id="aiExplain">
+          <div class="explain-hd">
+            <div class="ai-dot">🤖</div>
+            <div class="explain-label">PocketPT <span>— Explanation</span></div>
+          </div>
+          <div class="explain-text" id="aiExplainText"></div>
+          <div class="followup-row" id="aiFollowup"></div>
+        </div>
+        <div class="scenario-footer">
+          <button class="btn-ghost" onclick="prevScenario()">← Previous</button>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--txt-muted)" id="scenarioScore"></div>
+          <button class="btn-primary" onclick="nextScenario()">Next Question →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TUTOR TAB
+════════════════════════════════════════ -->
+<div id="tab-tutor" class="tab-page">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>AI-Powered</div>
+    <h1>Your personal <em>trading tutor</em></h1>
+    <p>Ask anything. Get explanations using YOUR instruments, at YOUR level.</p>
+  </div>
+  <div class="main-content">
+    <div class="dc-card tutor-card">
+      <div class="chat-messages" id="tutorMessages">
+        <div class="msg ai">
+          <div class="msg-av ai">🤖</div>
+          <div class="bubble">
+            Hey! I'm your PocketPT tutor. 👋<br><br>
+            I know you trade <strong>Synthetic Indices</strong> and you're at an <strong>intermediate level</strong>.
+            Ask me anything — from explaining RSI to breaking down why your last trade went wrong.<br><br>
+            What would you like to understand today?
+          </div>
+        </div>
+      </div>
+      <div class="quick-asks">
+        <div class="quick-ask" onclick="askTutor('Explain RSI like I\'m a beginner')">What is RSI?</div>
+        <div class="quick-ask" onclick="askTutor('Why do I keep losing on Volatility 75?')">Why am I losing on V75?</div>
+        <div class="quick-ask" onclick="askTutor('What\'s a good risk-reward ratio?')">Risk:Reward basics</div>
+        <div class="quick-ask" onclick="askTutor('Explain MACD using synthetic indices as an example')">MACD on synthetics</div>
+        <div class="quick-ask" onclick="askTutor('What causes revenge trading and how do I stop?')">Stop revenge trading</div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="tutorInput" placeholder="Ask your tutor anything..."
+               onkeydown="if(event.key==='Enter')sendTutorMsg()" />
+        <button class="chat-send" id="sendBtn" onclick="sendTutorMsg()">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     AUTOPSY TAB
+════════════════════════════════════════ -->
+<div id="tab-autopsy" class="tab-page">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>Trade Autopsy</div>
+    <h1>Learn from <em>your own</em> trades</h1>
+    <p>Enter any trade. PocketPT breaks down what happened and what the lesson is — without judgment.</p>
+  </div>
+  <div class="main-content">
+    <div class="dc-card autopsy-card">
+      <div class="section-hd" style="margin-bottom:14px;">
+        <div class="section-title">Enter your trade details</div>
+      </div>
+      <div class="input-grid">
+        <div class="field">
+          <div class="field-label">Instrument</div>
+          <select class="field-input" id="tradeInstrument">
+            <option>Gold (XAU/USD)</option>
+            <option>EUR/USD</option>
+            <option>Volatility 75</option>
+            <option>Volatility 100</option>
+            <option>Boom 1000</option>
+            <option>Crash 500</option>
+            <option>Bitcoin (BTC)</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label">Direction</div>
+          <select class="field-input" id="tradeDir">
+            <option>BUY (Long)</option>
+            <option>SELL (Short)</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label">Entry Price</div>
+          <input class="field-input" id="tradeEntry" placeholder="e.g. 2345.50" type="number" />
+        </div>
+        <div class="field">
+          <div class="field-label">Exit Price</div>
+          <input class="field-input" id="tradeExit" placeholder="e.g. 2312.00" type="number" />
+        </div>
+        <div class="field">
+          <div class="field-label">Stop Loss</div>
+          <input class="field-input" id="tradeSL" placeholder="e.g. 2330.00" type="number" />
+        </div>
+        <div class="field">
+          <div class="field-label">Take Profit</div>
+          <input class="field-input" id="tradeTP" placeholder="e.g. 2380.00" type="number" />
+        </div>
+        <div class="field">
+          <div class="field-label">Result ($)</div>
+          <input class="field-input" id="tradeResult" placeholder="e.g. -45.00" type="number" />
+        </div>
+        <div class="field">
+          <div class="field-label">Your Experience</div>
+          <select class="field-input" id="traderLevel">
+            <option>Beginner</option>
+            <option selected>Intermediate</option>
+            <option>Advanced</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px;">
+        <div class="field-label">What were you thinking? (optional)</div>
+        <textarea class="field-input" id="tradeThoughts"
+          placeholder="e.g. I saw RSI was oversold so I bought, but the price kept falling..."
+          style="resize:vertical;min-height:64px;line-height:1.5;padding-top:8px;"></textarea>
+      </div>
+      <button class="autopsy-run" onclick="runAutopsy()">🔬 Analyse This Trade</button>
+
+      <div class="autopsy-result" id="autopsyResult">
+        <div class="verdict-row">
+          <div class="verdict-icon" id="verdictIcon"></div>
+          <div>
+            <div class="verdict-title" id="verdictLabel"></div>
+            <div class="verdict-sub" id="verdictSub"></div>
+          </div>
+        </div>
+        <div class="lessons" id="autopsyLessons"></div>
+        <div class="next-step-block">
+          <div class="next-step-label">Next step</div>
+          <div class="next-step-text" id="autopsyNextStep"></div>
+          <div class="next-step-actions" id="autopsyActions"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /.app -->
+
+<!-- XP Toast -->
+<div class="xp-toast" id="xpToast">
+  <div>
+    <div class="xp-amount" id="xpAmount">+20 XP</div>
+    <div class="xp-label" id="xpReason">Correct answer!</div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let xp = 240, streak = 3;
+let currentScenario = 0, scenarioAnswered = false;
+let score = 0, totalAnswered = 0;
+
+// ── Tabs ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const idx = ['learn','scenarios','tutor','autopsy'].indexOf(tab);
+  document.querySelectorAll('.nav-tab')[idx]?.classList.add('active');
+  if (tab === 'scenarios') loadScenario(currentScenario);
+}
+
+// ── XP ──
+function addXP(amount, reason) {
+  xp += amount;
+  document.getElementById('xpCount').textContent = xp;
+  document.getElementById('xpAmount').textContent = '+' + amount + ' XP';
+  document.getElementById('xpReason').textContent = reason;
+  const t = document.getElementById('xpToast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function showToast(msg) {
+  document.getElementById('xpReason').textContent = msg;
+  document.getElementById('xpAmount').textContent = '💡';
+  const t = document.getElementById('xpToast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Scenarios ──
+const scenarios = [
+  {
+    chip:'GOLD / XAU', chipClass:'chip-default',
+    contextText:`Gold has been climbing for 3 consecutive days after the US Federal Reserve signalled it would keep interest rates unchanged. The US Dollar Index (DXY) has weakened, and there's rising geopolitical tension in the Middle East. Gold is currently sitting just below a key resistance level at $2,380.`,
+    marketData:[{label:'XAU/USD',val:'$2,374.20',cls:'up'},{label:'3-Day Change',val:'+1.8%',cls:'up'},{label:'RSI (14)',val:'68.4',cls:'neutral'},{label:'DXY',val:'102.1 ↓',cls:'down'}],
+    question:'Given these conditions, a trader wants to go <em>LONG on Gold</em>. Which is the strongest reason to support that decision?',
+    choices:[{l:'A',t:'Gold has gone up 3 days in a row, so it will keep going up.'},{l:'B',t:'Weak Dollar + stable rates + geopolitical uncertainty = classic safe-haven demand for Gold.'},{l:'C',t:"RSI is near 70 which means it's about to shoot up even higher."},{l:'D',t:"Gold always goes up, it's the safest trade."}],
+    correct:1,
+    explanation:`<strong>B is correct</strong> — a great example of <span class="hl">macro confluence</span>.<br><br>When the US Dollar weakens, Gold typically rises because it's priced in USD. Add <strong>stable/low interest rates</strong> and <strong>geopolitical risk</strong> and you have three independent reasons aligning.<br><br><strong>Why the others are wrong:</strong><br>• <strong>A</strong> is <span class="hl">recency bias</span> — past movement doesn't predict future movement on its own.<br>• <strong>C</strong> is backwards — RSI near 70 signals <em>overbought</em>, a caution signal.<br>• <strong>D</strong> is a dangerous myth.`,
+    followups:['What is RSI overbought?','How does DXY affect Gold?','What is safe-haven demand?']
+  },
+  {
+    chip:'VOLATILITY 75', chipClass:'chip-teal',
+    contextText:`You're trading Volatility 75 Index on Deriv. The market has been ranging between 8,200 and 8,500 for the past 4 hours. You spot what looks like a breakout above 8,500 — but the candle that broke out was a very small-bodied candle with a long wick. Volume (pip movement) is lower than the previous candles.`,
+    marketData:[{label:'V75 Price',val:'8,518',cls:'up'},{label:'Range High',val:'8,500',cls:'neutral'},{label:'Candle Body',val:'Small',cls:'down'},{label:'RSI (14)',val:'62.1',cls:'neutral'}],
+    question:'You see price break above the range. Should you immediately <em>enter a LONG trade</em>?',
+    choices:[{l:'A',t:'Yes! Breakout confirmed — enter immediately for maximum profit.'},{l:'B',t:'Wait for a candle close above 8,500 AND a retest of that level before entering.'},{l:'C',t:'No — RSI at 62 means the move is already over.'},{l:'D',t:'Enter a SHORT trade — the small wick candle signals a reversal.'}],
+    correct:1,
+    explanation:`<strong>B is the disciplined answer</strong> — this separates profitable traders from impulsive ones.<br><br>Small candle body + long wick + low volatility = classic signs of a <span class="hl">false breakout</span>. Synthetic indices frequently "poke" above resistance to trigger stops before reversing.<br><br><strong>The correct process:</strong><br>1. Wait for a <strong>full candle close</strong> above 8,500<br>2. Wait for a <strong>retest</strong> — price returns to 8,500, holds as support, then bounces<br>3. <em>Then</em> enter with stop below the retest candle`,
+    followups:['What is a false breakout?','How do I spot a retest?','What candle body size matters?']
+  },
+  {
+    chip:'PSYCHOLOGY', chipClass:'chip-red',
+    contextText:`You just took a loss of $50 on a V75 trade. You were certain about your setup but the market moved against you. You still have $200 in your account. You're feeling frustrated and want to "make it back quickly." You spot another trade that looks okay but not perfect — your usual rules say to skip it.`,
+    marketData:[{label:'Account',val:'$200',cls:'neutral'},{label:'Just Lost',val:'-$50',cls:'down'},{label:'Account Down',val:'-25%',cls:'down'},{label:'Setup Quality',val:'Below avg',cls:'down'}],
+    question:'You break your rules and enter the trade anyway. What are you experiencing?',
+    choices:[{l:'A',t:'Smart trading — catching up losses is part of trading strategy.'},{l:'B',t:'Revenge trading driven by emotional bias — one of the most common causes of blown accounts.'},{l:'C',t:'FOMO — fear of missing a potential winning trade.'},{l:'D',t:'Confirmation bias — the market always gives you a chance to recover.'}],
+    correct:1,
+    explanation:`<strong>B — Revenge trading.</strong> Recognising it is the most important skill you'll develop.<br><br><span class="hl">Revenge trading</span> happens when <strong>emotion overrides your system</strong>. Your brain wants to restore what it lost immediately.<br><br><strong>What actually happens:</strong><br>• Below-average setup → higher chance of another loss<br>• Another loss → frustration doubles → bigger "recovery" bets<br>• This spiral has blown more accounts than bad analysis<br><br><strong>Professional response:</strong> Close the platform. Walk away 30 minutes.`,
+    followups:['How do I stop revenge trading?','What is FOMO in trading?','How do I build discipline?']
+  },
+  {
+    chip:'RISK MANAGEMENT', chipClass:'chip-default',
+    contextText:`You have a $500 trading account. You've identified a solid setup on EUR/USD. Entry: 1.0850, stop-loss: 1.0820 (30 pips), take-profit: 1.0920 (70 pips). You want to risk 10% of your account on this trade.`,
+    marketData:[{label:'Account Size',val:'$500',cls:'neutral'},{label:'Stop Distance',val:'30 pips',cls:'neutral'},{label:'TP Distance',val:'70 pips',cls:'neutral'},{label:'Risk:Reward',val:'1:2.33',cls:'up'}],
+    question:'Risking 10% ($50) per trade on this setup — is this <em>good risk management</em>?',
+    choices:[{l:'A',t:"Yes — a 1:2.33 RR ratio means you'll be profitable long-term."},{l:'B',t:'Yes — you need to risk more to make more with a small account.'},{l:'C',t:'No — 10% per trade is far too high. 3 consecutive losses wipes 27% of your account.'},{l:'D',t:"Doesn't matter — risk management only matters for large accounts."}],
+    correct:2,
+    explanation:`<strong>C is correct.</strong> The R:R is great — but the <span class="hl">position sizing is dangerous</span>.<br><br>At 10% risk per trade:<br>• 3 losses in a row = account down <strong>27%</strong><br>• 5 losses in a row = account down <strong>41%</strong><br><br><strong>Professional standard: 1–2% per trade</strong><br>At 1% ($5/trade), 10 consecutive losses = only -10% — manageable and recoverable.<br><br><span class="hl">Survival first, profit second.</span>`,
+    followups:['What is the 1% rule?','How do I calculate position size?','What is a drawdown?']
+  }
+];
+
+function loadScenario(idx) {
+  const s = scenarios[idx];
+  scenarioAnswered = false;
+  document.getElementById('qNum').textContent = idx + 1;
+  document.getElementById('scenarioChip').textContent = s.chip;
+  document.getElementById('scenarioChip').className = 'chip ' + s.chipClass;
+  document.getElementById('scenarioContextText').textContent = s.contextText;
+  document.getElementById('marketDataRow').innerHTML = s.marketData.map(d => `
+    <div class="market-datum">
+      <div class="datum-label">${d.label}</div>
+      <div class="datum-val ${d.cls}">${d.val}</div>
+    </div>`).join('');
+  document.getElementById('scenarioQuestion').innerHTML = s.question;
+  document.getElementById('choiceGrid').innerHTML = s.choices.map((c,i) => `
+    <button class="choice-btn" onclick="selectChoice(${i})" id="choice-${i}">
+      <span class="choice-label">${c.l}</span>${c.t}
+    </button>`).join('');
+  document.getElementById('aiExplain').classList.remove('visible');
+  document.getElementById('scenarioScore').textContent = totalAnswered > 0 ? `${score}/${totalAnswered} correct` : '';
+}
+
+function selectChoice(idx) {
+  if (scenarioAnswered) return;
+  scenarioAnswered = true; totalAnswered++;
+  const s = scenarios[currentScenario];
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach((b,i) => { b.disabled = true; if (i===s.correct) b.classList.add('reveal-correct'); });
+  const isCorrect = idx === s.correct;
+  btns[idx].classList.remove('reveal-correct');
+  btns[idx].classList.add(isCorrect ? 'selected-correct' : 'selected-wrong');
+  if (isCorrect) { score++; addXP(20,'Correct answer!'); } else { addXP(5,'Good try — lesson learned!'); }
+  document.getElementById('scenarioScore').textContent = `${score}/${totalAnswered} correct`;
+  document.getElementById('aiExplainText').innerHTML = s.explanation;
+  document.getElementById('aiFollowup').innerHTML = s.followups.map(f =>
+    `<div class="followup-pill" onclick="switchTab('tutor');askTutor('${f}')">${f}</div>`).join('');
+  document.getElementById('aiExplain').classList.add('visible');
+}
+
+function nextScenario() { currentScenario = (currentScenario+1)%scenarios.length; loadScenario(currentScenario); }
+function prevScenario() { currentScenario = (currentScenario-1+scenarios.length)%scenarios.length; loadScenario(currentScenario); }
+
+// ── Tutor ──
+const KB = {
+  rsi:`RSI (Relative Strength Index) is a momentum indicator (0–100) — a "tiredness meter" for price.\n\n**On Synthetic Indices:**\n• Above 70 = overbought (price may pull back)\n• Below 30 = oversold (potential bounce)\n\n**Key mistake:** Treating RSI 70+ as an automatic sell. On V75, RSI can stay above 70 for many candles during a strong trend. Use as context, not a trigger.\n\n**Better use:** RSI divergence — price makes a new high but RSI doesn't. That's your warning.`,
+  revenge:`Revenge trading = entering trades to recover losses, not because your criteria are met.\n\n**Why your brain does this:** Losses activate the same brain region as physical pain.\n\n**3-step fix:**\n1. Recognise the feeling — frustration = don't trade\n2. Physical break — step away 30+ minutes\n3. Re-qualify — only enter when you can explain the setup without mentioning your last loss\n\n**For V75:** Synthetics run 24/7. There will always be another setup.`,
+  macd:`MACD shows the relationship between two moving averages.\n\n**Three parts:**\n• MACD Line = 12-EMA minus 26-EMA\n• Signal Line = 9-EMA of MACD\n• Histogram = difference between them\n\n**On Synthetics:** A MACD crossover confirms trend direction — it's not a standalone trigger. Combine with key price levels.\n\n**Common mistake:** Taking every crossover in a ranging market. MACD is for trends.`,
+  risk:`The 1% rule: never risk more than 1–2% of your account per trade.\n\n**The math:**\n• $500 × 1% = $5 risk per trade\n• 10 consecutive losses = −$45 (9% drawdown, recoverable)\n• 10 losses at 10% = −$284 (57% drawdown, devastating)\n\n**Formula:** Stake = (Account × Risk%) ÷ Stop Distance\n\nSmall accounts need *stricter* risk rules, not looser. Your edge compounds over hundreds of trades.`
+};
+
+function getTutorResponse(msg) {
+  const l = msg.toLowerCase();
+  if (l.includes('rsi')||l.includes('relative strength')) return KB.rsi;
+  if (l.includes('revenge')||l.includes('closing too early')||l.includes('emotional')) return KB.revenge;
+  if (l.includes('macd')) return KB.macd;
+  if (l.includes('risk')||l.includes('position size')||l.includes('1%')) return KB.risk;
+  if (l.includes('v75')||l.includes('volatility')||l.includes('losing')) {
+    return `Since you're trading V75 (synthetics), here's the key insight:\n\n**Common V75 losses come from:**\n• Stops too tight — V75 wicks aggressively before continuing\n• Overtrading — constant movement tempts you to always be in a trade\n• Ignoring market structure — even synthetics respect key price levels\n\n**What to try:** Widen your stop by 50% and reduce position size proportionally. Same risk, better survival rate through the noise.`;
+  }
+  return `Good question. Here's how I'd explain this for synthetic index traders:\n\nThe concept you're asking about is one where the real understanding comes from seeing it in your own trades — not just theory.\n\n**My recommendation:** Go to the Trade Autopsy tab and enter a recent trade. I can then explain exactly how this concept applied to it. That's where real learning happens.\n\nOr ask me directly about: RSI, MACD, stop loss placement, revenge trading, or risk management.`;
+}
+
+function askTutor(q) {
+  switchTab('tutor');
+  document.getElementById('tutorInput').value = q;
+  setTimeout(sendTutorMsg, 100);
+}
+
+function sendTutorMsg() {
+  const input = document.getElementById('tutorInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  document.getElementById('sendBtn').disabled = true;
+  const msgs = document.getElementById('tutorMessages');
+  msgs.innerHTML += `<div class="msg user"><div class="msg-av user">👤</div><div class="bubble">${msg}</div></div>`;
+  const tid = 'typing-' + Date.now();
+  msgs.innerHTML += `<div class="msg ai" id="${tid}"><div class="msg-av ai">🤖</div><div class="bubble"><div class="typing-row"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  setTimeout(() => {
+    document.getElementById(tid)?.remove();
+    const res = formatMd(getTutorResponse(msg));
+    msgs.innerHTML += `<div class="msg ai"><div class="msg-av ai">🤖</div><div class="bubble">${res}</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+    document.getElementById('sendBtn').disabled = false;
+    addXP(10,'Question asked!');
+  }, 1200 + Math.random()*600);
+}
+
+function formatMd(t) {
+  return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+          .replace(/^• (.+)/gm,'<div style="padding-left:12px;margin:2px 0">• $1</div>')
+          .replace(/\n/g,'<br>');
+}
+
+function learnConcept(c) {
+  askTutor('Explain ' + c + ' to me, using synthetic indices as examples where possible');
+  addXP(5,'Started a new concept!');
+}
+
+// ── Autopsy ──
+function runAutopsy() {
+  const instrument = document.getElementById('tradeInstrument').value;
+  const dir = document.getElementById('tradeDir').value;
+  const entry = parseFloat(document.getElementById('tradeEntry').value)||0;
+  const exitP = parseFloat(document.getElementById('tradeExit').value)||0;
+  const sl = parseFloat(document.getElementById('tradeSL').value)||0;
+  const tp = parseFloat(document.getElementById('tradeTP').value)||0;
+  const result = parseFloat(document.getElementById('tradeResult').value)||0;
+  const thoughts = document.getElementById('tradeThoughts').value;
+  const isWin = result > 0;
+  const rr = sl && tp ? Math.abs(tp-entry)/Math.abs(entry-sl) : null;
+  const resultEl = document.getElementById('autopsyResult');
+  resultEl.classList.add('visible');
+  document.getElementById('verdictIcon').textContent = isWin ? '✅' : '📉';
+  document.getElementById('verdictLabel').textContent = isWin ? 'Winning Trade' : 'Losing Trade';
+  document.getElementById('verdictLabel').className = 'verdict-title ' + (isWin ? 'win' : 'loss');
+  document.getElementById('verdictSub').textContent = `${instrument} ${dir} | ${result>=0?'+':''}$${result.toFixed(2)} | ${rr?'R:R 1:'+rr.toFixed(2):'No R:R set'}`;
+  const lessons = [];
+  if (!sl) lessons.push({n:'!',t:'<strong>No Stop Loss Set</strong> — The single most dangerous habit. Without a stop, one bad trade can wipe weeks of gains. Always define your worst-case before entering.'});
+  if (rr&&rr<1) lessons.push({n:'⚠',t:`<strong>Poor Risk:Reward (1:${rr.toFixed(2)})</strong> — You risked more than you stood to gain. Below 1:1.5 is unprofitable long-term even with 60% win rate.`});
+  if (rr&&rr>=2) lessons.push({n:'✓',t:`<strong>Good Risk:Reward (1:${rr.toFixed(2)})</strong> — Excellent setup structure. At this ratio you only need 33% win rate to break even. Professional-level.`});
+  if (!isWin&&thoughts&&thoughts.toLowerCase().includes('rsi')) lessons.push({n:'2',t:'<strong>RSI as sole signal</strong> — RSI tells you momentum is stretched, not that it will reverse. What was price structure saying? Was there a key level nearby?'});
+  if (!isWin&&result<0) { const lp=sl?Math.abs(entry-exitP)/Math.abs(entry-sl):null; if(lp&&lp>1.2) lessons.push({n:'3',t:'<strong>Stop Loss Moved or Missed</strong> — Your exit was beyond your planned stop. Moving a stop to "give room" is a dangerous habit — the stop is a commitment, not a suggestion.'}); }
+  if (isWin&&rr&&rr>=1.5) lessons.push({n:'🏆',t:'<strong>Solid execution</strong> — R:R and outcome aligned. Identify what made this setup work and replicate it. Journal this one carefully.'});
+  if (!lessons.length) lessons.push({n:'1',t:'<strong>Trade logged</strong> — Add stop loss, take profit, and your thoughts for a deeper analysis.'});
+  document.getElementById('autopsyLessons').innerHTML = lessons.map(l=>`<div class="lesson-row"><div class="lesson-badge">${l.n}</div><div class="lesson-text">${l.t}</div></div>`).join('');
+  document.getElementById('autopsyNextStep').innerHTML = isWin
+    ? `<span style="color:var(--profit);font-weight:600;">Solid trade. </span>Spend 5 minutes writing down exactly why you took it — that clarity is your edge.`
+    : `<span style="color:var(--info);font-weight:600;">Every loss has a lesson. </span>You've already done the hard part by analysing it.`;
+  const lessonTopic = !sl?'Why is a stop loss non-negotiable?':rr&&rr<1?'How do I find higher R:R setups?':'How do I build a trading checklist?';
+  document.getElementById('autopsyActions').innerHTML = `
+    <button class="followup-pill" onclick="askTutor('${lessonTopic}')">Ask tutor →</button>
+    <button class="followup-pill" onclick="switchTab('scenarios')">Practice scenario →</button>`;
+  addXP(15,'Trade analysed!');
+  resultEl.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+document.addEventListener('DOMContentLoaded', () => loadScenario(0));
+</script>
+</body>
+</html>
