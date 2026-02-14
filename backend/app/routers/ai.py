@@ -11,23 +11,16 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-import uuid
-import logging
-
 from app.config.db import get_db
-from app.ai_services.insights import get_insight_generator
-from app.ai_services.education import get_education_generator
-from app.ai_services.chat import get_chatbot
-from app.ai_services.analysis import (
-    get_recent_trades,
-    calculate_statistics,
-    detect_patterns
-)
-
-logger = logging.getLogger(__name__)
+from app.config.ai import get_ai_settings
+from app.services.ai.llm.education.education import get_education_generator
+from app.services.ai.llm.insights.insights import get_insight_generator
+from app.services.ai.llm.chat.chat import get_chatbot
+from app.services.analysis.analysis import get_analysis_service
+from app.services.deriv.deriv import get_deriv_service
+from app.services.logger.logger import logger
 
 router = APIRouter(prefix="/ai", tags=["AI Services"])
-
 
 # ============ Request/Response Models ============
 
@@ -50,12 +43,8 @@ class InsightsResponse(BaseModel):
 
 class LessonRequest(BaseModel):
     """Request model for lesson generation."""
+    user_id: int = Field(..., description="User ID")
     topic: str = Field(..., min_length=3, max_length=200, description="Lesson topic")
-    skill_level: str = Field(
-        default="beginner",
-        pattern="^(beginner|intermediate|advanced)$",
-        description="User's skill level"
-    )
     instruments: List[str] = Field(default_factory=list, description="Trading instruments")
     weakness: Optional[str] = Field(None, description="Identified weakness to address")
     performance_summary: Optional[str] = Field(None, description="Recent performance summary")
@@ -127,7 +116,6 @@ async def health_check():
 
     Returns status of each AI service component.
     """
-    from app.config.ai_config import get_ai_settings
 
     settings = get_ai_settings()
 
@@ -144,9 +132,7 @@ async def health_check():
 @router.get("/insights/{user_id}", response_model=InsightsResponse)
 async def get_trading_insights(
     user_id: int,
-    days: int = Query(default=7, ge=1, le=90, description="Days to analyze"),
-    user_level: str = Query(default="beginner", pattern="^(beginner|intermediate|advanced)$"),
-    db: Session = Depends(get_db)
+    limit: int = Query(default=7, ge=1, le=90, description="Number of days to analyze"),
 ):
     """
     Generate trading insights for a user.
@@ -155,8 +141,7 @@ async def get_trading_insights(
     insights, pattern detection, and recommendations.
 
     - **user_id**: The user's ID
-    - **days**: Number of days to analyze (1-90)
-    - **user_level**: User's skill level
+    - **limit**: Number of days to analyze (1-90)
 
     Returns insights including:
     - Summary of trading performance
@@ -166,7 +151,7 @@ async def get_trading_insights(
     """
     try:
         generator = get_insight_generator()
-        result = await generator.generate_insights(db, user_id, days, user_level)
+        result = await generator.generate_insights(user_id, limit)
 
         return InsightsResponse(
             summary=result.summary,
@@ -212,8 +197,8 @@ async def generate_lesson(request: LessonRequest):
     try:
         generator = get_education_generator()
         result = await generator.generate_lesson(
+            user_id=request.user_id,
             topic=request.topic,
-            skill_level=request.skill_level,
             instruments=request.instruments,
             weakness=request.weakness,
             performance_summary=request.performance_summary,
@@ -292,13 +277,7 @@ async def chat_with_assistant(request: ChatRequest):
 
 @router.get("/suggest-topic/{user_id}", response_model=TopicSuggestionResponse)
 async def suggest_topics(
-    user_id: int,
-    skill_level: str = Query(
-        default="beginner",
-        pattern="^(beginner|intermediate|advanced)$",
-        description="User's skill level"
-    ),
-    db: Session = Depends(get_db)
+    user_id: int
 ):
     """
     Suggest educational topics for a user.
@@ -313,16 +292,17 @@ async def suggest_topics(
     """
     try:
         # Get user's trading patterns for context
-        trades = get_recent_trades(db, user_id, days=30)
-        stats = calculate_statistics(trades)
-        patterns = detect_patterns(trades)
+        analysis = get_analysis_service()
+        trades = analysis.get_trades(limit=30)
+        stats = analysis.calculate_statistics(trades)
+        patterns = analysis.detect_patterns(trades)
 
         # Extract detected pattern names
         pattern_names = [p.pattern.value for p in patterns if p.detected]
 
         generator = get_education_generator()
         suggestions = await generator.suggest_topics(
-            skill_level=skill_level,
+            user_id=user_id,
             instruments=[stats.get("most_traded_symbol", "general")],
             win_rate=stats.get("win_rate", 50),
             patterns=pattern_names,

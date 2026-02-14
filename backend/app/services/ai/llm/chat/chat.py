@@ -5,61 +5,19 @@ Uses Anthropic Claude API to provide conversational trading assistance.
 Maintains conversation history and context for coherent multi-turn dialogues.
 """
 from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from datetime import datetime
 import uuid
-import logging
-
-from app.config.ai_config import get_ai_settings
-from app.prompts.chat_prompts import (
+from app.services.ai.llm.chat.chat_prompts import (
     CHAT_SYSTEM_PROMPT,
     CHAT_WITH_HISTORY_TEMPLATE,
     CONTEXT_BUILDING_TEMPLATE,
     QUICK_RESPONSES
 )
-from app.ai_services.deriv_market import get_market_service
-from app.database.models.users import User
-from app.config.db import SessionLocal
+from app.services.ai.llm.chat.typings import ChatSession
+from app.services.ai.llm.connector import LLMConnector
+from app.services.logger.logger import logger
+from app.database.model import users as UserModels
 
-logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ChatMessage:
-    """A single chat message."""
-    role: str  # "user" or "assistant"
-    content: str
-    timestamp: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class ChatSession:
-    """A chat session with history."""
-    session_id: str
-    user_id: int
-    messages: List[ChatMessage] = field(default_factory=list)
-    user_context: str = ""
-    created_at: datetime = field(default_factory=datetime.now)
-
-    def add_message(self, role: str, content: str) -> None:
-        """Add a message to the session."""
-        self.messages.append(ChatMessage(role=role, content=content))
-
-    def get_history_text(self, max_messages: int = 10) -> str:
-        """Get formatted conversation history."""
-        recent = self.messages[-max_messages:]
-        return "\n".join(
-            f"{m.role.capitalize()}: {m.content}"
-            for m in recent
-        )
-
-    def get_messages_for_api(self, max_messages: int = 10) -> List[Dict[str, str]]:
-        """Get messages formatted for API call."""
-        recent = self.messages[-max_messages:]
-        return [{"role": m.role, "content": m.content} for m in recent]
-
-
-class TradingChatBot:
+class TradingChatBot(LLMConnector):
     """
     AI-powered trading assistant chatbot.
 
@@ -69,26 +27,8 @@ class TradingChatBot:
 
     def __init__(self):
         """Initialize the chatbot with Anthropic client."""
-        self.settings = get_ai_settings()
-        self._client = None
+        super().__init__()
         self._sessions: Dict[str, ChatSession] = {}
-
-    def _get_client(self):
-        """Lazy load the Anthropic client."""
-        if self._client is None:
-            if not self.settings.is_anthropic_configured():
-                logger.warning("Anthropic API key not configured. AI features will be unavailable.")
-                return None
-            try:
-                import anthropic
-                self._client = anthropic.Anthropic(api_key=self.settings.anthropic_api_key)
-            except ImportError:
-                logger.error("Anthropic package not installed.")
-                return None
-            except Exception as e:
-                logger.error(f"Failed to initialize Anthropic client: {e}")
-                return None
-        return self._client
 
     def get_or_create_session(
         self,
@@ -115,31 +55,24 @@ class TradingChatBot:
 
         context_str = ""
         if user_context:
-            # Fetch user profile from DB to enhance context
-            db_experience = "beginner"
-            db_trading_style = "day_trader"
-            db_risk_behavior = "conservative"
-            db_asset_preference = ""
-
-            db = SessionLocal()
             try:
-                user = db.query(User).filter(User.id == user_id).first()
+                user = self._db.query(UserModels.User).filter(UserModels.User.id == user_id).first()
                 if user:
                     db_experience = user.experience_level or "beginner"
-                    db_trading_style = user.trading_duration or "day_trader"
-                    db_risk_behavior = user.risk_tolerance or "conservative"
-                    db_asset_preference = user.asset_preference or ""
+                    db_trading_style = user.trading_duration or "day trader"
+                    db_risk_behavior = user.risk_tolerance or "cut loss"
+                    db_capital_allocation = user.capital_allocation or "low risk"
+                    db_asset_preference = user.asset_preference or "commodities"
             except Exception as e:
                 logger.error(f"Error fetching user profile: {e}")
-            finally:
-                db.close()
 
             # Parse questionnaire preferences (Prioritize DB, fallback to frontend context)
             experience_level = db_experience
             trading_style = db_trading_style
             risk_behavior = db_risk_behavior
+            capital_allocation = db_capital_allocation
             preferred_assets = [db_asset_preference] if db_asset_preference else user_context.get("preferred_assets", [])
-            
+
             risk_per_trade = user_context.get("risk_per_trade", 2.0)
 
             # Parse performance data
@@ -166,6 +99,7 @@ class TradingChatBot:
             context_str = CONTEXT_BUILDING_TEMPLATE.format(
                 # Questionnaire preferences
                 experience_level=experience_level,
+                capital_allocation=capital_allocation,
                 trading_style=trading_style,
                 risk_behavior=risk_behavior,
                 risk_per_trade=risk_per_trade,
@@ -215,13 +149,13 @@ class TradingChatBot:
 
         if "market_context" not in user_context:
             try:
-                market_service = get_market_service()
                 preferred_assets = user_context.get("preferred_assets", [])
-                market_context = await market_service.get_market_context_safe(preferred_assets)
+                # market_context = await self._deriv_service.get_market_context_safe(preferred_assets)
+                market_context = await self._deriv_service.get_market_context(preferred_assets)
                 user_context["market_context"] = market_context
 
                 # Fetch recent trades from backend API for accuracy
-                api_trades = await market_service.get_recent_trades(limit=5)
+                api_trades = await self._deriv_service.get_recent_trades(limit=5)
                 if api_trades:
                     formatted_trades = []
                     for t in api_trades:
@@ -249,10 +183,10 @@ class TradingChatBot:
         session.add_message("user", message)
 
         # Check for quick responses (greetings, etc.)
-        quick_response = self._check_quick_response(message)
-        if quick_response:
-            session.add_message("assistant", quick_response)
-            return quick_response, session.session_id
+        # quick_response = self._check_quick_response(message)
+        # if quick_response:
+        #     session.add_message("assistant", quick_response)
+        #     return quick_response, session.session_id
 
         # Build system prompt with user context
         system_prompt = CHAT_SYSTEM_PROMPT.format(
@@ -267,11 +201,10 @@ class TradingChatBot:
             max_tokens = 175  # Approx 150 words constraint
             system_prompt += "\n\nCRITICAL INSTRUCTION: Respond in 150 words or less. Be concise."
 
-        # Try to get AI response
-        client = self._get_client()
-        if client:
+        self._client = self._get_client()
+        if self._client:
             try:
-                response = await self._call_anthropic(
+                response = await self._call_llm(
                     system_prompt=system_prompt,
                     messages=session.get_messages_for_api(),
                     max_tokens=max_tokens
@@ -285,28 +218,6 @@ class TradingChatBot:
         error_msg = "I apologize, but I am unable to process your request at the moment. Please ensure the AI service is correctly configured."
         session.add_message("assistant", error_msg)
         return error_msg, session.session_id
-
-    async def _call_anthropic(
-        self,
-        system_prompt: str,
-        messages: List[Dict[str, str]],
-        max_tokens: int = 1024
-    ) -> str:
-        """Make API call to Anthropic Claude."""
-        import asyncio
-
-        def _sync_call():
-            client = self._get_client()
-            response = client.messages.create(
-                model=self.settings.anthropic_model_name,
-                max_tokens=max_tokens,
-                system=system_prompt,
-                messages=messages
-            )
-            return response.content[0].text
-
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, _sync_call)
 
     def _check_quick_response(self, message: str) -> Optional[str]:
         """Check if message matches a quick response pattern."""
@@ -376,14 +287,29 @@ class TradingChatBot:
             ]
         return []
 
-
 # Singleton instance
 _chatbot: Optional[TradingChatBot] = None
-
-
 def get_chatbot() -> TradingChatBot:
     """Get the singleton chatbot instance."""
     global _chatbot
     if _chatbot is None:
         _chatbot = TradingChatBot()
     return _chatbot
+
+# Example usage:
+if __name__ == "__main__":
+    import asyncio
+
+    async def test_chat(message):
+        chatbot = get_chatbot()
+        response, session_id = await chatbot.chat(
+            session_id=None,
+            user_id=1,
+            message=message,
+            user_context={}
+        )
+        print(f"AI Response: {response}")
+        print(f"Session ID: {session_id}")
+
+    asyncio.run(test_chat("Hi, can you help me understand what a stop-loss is?"))
+    asyncio.run(test_chat("Advice on how to earn more? What should i buy?"))
