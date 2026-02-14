@@ -13,3 +13,4 @@ class User(Base):
     risk_tolerance = Column(String, default="cut loss")         # e.g., cut loss, wait see, layering
     capital_allocation = Column(String, default="low risk")     # e.g., low risk, medium risk, high risk
     asset_preference = Column(String, default="forex")          # e.g., forex, commodities, crypto
+    trader_type = Column(String, nullable=True, default=None)  # "momentum" or "precision", set after style profiling
