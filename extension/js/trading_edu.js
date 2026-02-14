@@ -354,7 +354,7 @@ async function fetchPastTrades() {
             throw new Error('AI Integration not initialized');
         }
 
-        const response = await fetch(`${aiIntegration.backendUrl}/deriv/profit-table?limit=${limit}&sort=DESC`);
+        const response = await fetch(`${aiIntegration.backendUrl}/deriv/trades?amount=${limit}`);
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -362,7 +362,7 @@ async function fetchPastTrades() {
         }
 
         const data = await response.json();
-        pastTradesData = data.transactions || [];
+        pastTradesData = data || [];
 
         if (pastTradesData.length === 0) {
             showTradesError('No Trades Found', 'No trading history available in your Deriv account.');
@@ -398,9 +398,9 @@ function renderTradesTable(trades) {
     tbody.innerHTML = '';
 
     trades.forEach((trade, index) => {
-        const buyTime = new Date(trade.buy_time * 1000).toLocaleString();
-        const duration = trade.duration ? formatDuration(trade.duration) : 'N/A';
-        const profitLoss = parseFloat(trade.profit_loss || 0);
+        const buyTime = new Date(trade.purchase_time * 1000).toLocaleString();
+        const duration = trade.sell_time - trade.purchase_time ? formatDuration(trade.sell_time - trade.purchase_time) : 'N/A';
+        const profitLoss = parseFloat(trade.sell_price - trade.buy_price || 0);
         const isWin = profitLoss >= 0;
 
         const row = document.createElement('tr');
@@ -410,11 +410,10 @@ function renderTradesTable(trades) {
 
         row.innerHTML = `
       <td style="padding:12px;">
-        <input type="checkbox" class="trade-checkbox" data-index="${index}" 
-               onchange="updateSelectedTrades()" style="cursor:pointer;">
+        <input type="checkbox" class="trade-checkbox" data-index="${index}" style="cursor:pointer;">
       </td>
       <td style="padding:12px;font-size:13px;">${trade.contract_type || 'N/A'}</td>
-      <td style="padding:12px;font-size:13px;font-weight:500;">${trade.symbol || 'N/A'}</td>
+      <td style="padding:12px;font-size:13px;font-weight:500;">${trade.underlying_symbol || 'N/A'}</td>
       <td style="padding:12px;font-size:12px;color:var(--txt-muted);">${buyTime}</td>
       <td style="padding:12px;font-size:13px;">$${parseFloat(trade.buy_price || 0).toFixed(2)}</td>
       <td style="padding:12px;font-size:12px;color:var(--txt-muted);">${duration}</td>
@@ -467,6 +466,7 @@ function toggleSelectAll() {
     updateSelectedTrades();
 }
 
+
 // Show error state
 function showTradesError(title, message) {
     document.getElementById('tradesLoading').style.display = 'none';
@@ -503,20 +503,21 @@ async function analyzeSelectedTrades() {
     try {
         // Build detailed analysis request
         const tradesText = selectedTrades.map((trade, i) => {
-            const profitLoss = parseFloat(trade.profit_loss || 0);
+            const profitLoss = parseFloat(trade.sell_price - trade.buy_price || 0);
             const buyPrice = parseFloat(trade.buy_price || 0);
             const sellPrice = parseFloat(trade.sell_price || 0);
+            const duration = trade.sell_time - trade.purchase_time ? formatDuration(trade.sell_time - trade.purchase_time) : 0
 
             return `
 Trade ${i + 1}:
 - Contract: ${trade.contract_type || 'Unknown'}
-- Symbol: ${trade.symbol || 'Unknown'}
+- Symbol: ${trade.underlying_symbol || 'Unknown'}
 - Buy Price: $${buyPrice.toFixed(2)}
 - Sell Price: $${sellPrice.toFixed(2)}
 - Stake: $${buyPrice.toFixed(2)}
 - P/L: $${profitLoss.toFixed(2)} (${profitLoss >= 0 ? 'WIN' : 'LOSS'})
-- Duration: ${formatDuration(trade.duration || 0)}
-- Buy Time: ${new Date(trade.buy_time * 1000).toLocaleString()}
+- Duration: ${formatDuration(duration || 0)}
+- Buy Time: ${new Date(trade.purchase_time * 1000).toLocaleString()}
 ${trade.sell_time ? `- Sell Time: ${new Date(trade.sell_time * 1000).toLocaleString()}` : ''}
       `.trim();
         }).join('\n\n');
@@ -542,16 +543,16 @@ Format your response with clear sections and be specific with numbers and exampl
         const response = await aiIntegration.sendMessageToAI(analysisMessage, 'analysis');
 
         // Calculate aggregate stats
-        const totalPL = selectedTrades.reduce((sum, t) => sum + parseFloat(t.profit_loss || 0), 0);
-        const wins = selectedTrades.filter(t => parseFloat(t.profit_loss || 0) >= 0).length;
+        const totalPL = selectedTrades.reduce((sum, t) => sum + parseFloat(t.sell_price - t.buy_price || 0), 0);
+        const wins = selectedTrades.filter(t => parseFloat(t.sell_price - t.buy_price || 0) >= 0).length;
         const losses = selectedTrades.length - wins;
         const winRate = ((wins / selectedTrades.length) * 100).toFixed(1);
         const avgWin = wins > 0 ? selectedTrades
-            .filter(t => parseFloat(t.profit_loss || 0) >= 0)
-            .reduce((sum, t) => sum + parseFloat(t.profit_loss || 0), 0) / wins : 0;
+            .filter(t => parseFloat(t.sell_price - t.buy_price || 0) >= 0)
+            .reduce((sum, t) => sum + parseFloat(t.sell_price - t.buy_price || 0), 0) / wins : 0;
         const avgLoss = losses > 0 ? selectedTrades
-            .filter(t => parseFloat(t.profit_loss || 0) < 0)
-            .reduce((sum, t) => sum + parseFloat(t.profit_loss || 0), 0) / losses : 0;
+            .filter(t => parseFloat(t.sell_price - t.buy_price || 0) < 0)
+            .reduce((sum, t) => sum + parseFloat(t.sell_price - t.buy_price || 0), 0) / losses : 0;
 
         // Render results
         document.getElementById('verdictIcon').textContent = totalPL >= 0 ? '✅' : '📉';
@@ -741,9 +742,9 @@ document.getElementById('learn-nav-tab').addEventListener('click', () => switchT
 document.getElementById('tutor-nav-tab').addEventListener('click', () => switchTab('tutor'));
 document.getElementById('autopsy-nav-tab').addEventListener('click', () => switchTab('autopsy'));
 document.getElementById('leaderboard-nav-tab').addEventListener('click', () => switchTab('leaderboard'));
-document.getElementById('streak-keep-it-going').addEventListener('click', () => openScenarios);
+document.getElementById('streak-keep-it-going').addEventListener('click', openScenarios);
 document.getElementById('learning-section-link').addEventListener('click', () => showToast('Rebuilding curriculum from your trades...'));
-document.getElementById('path-grid-card-active').addEventListener('click', () => openScenarios);
+document.getElementById('path-grid-card-active').addEventListener('click', openScenarios);
 document.getElementById('rsi-concept-card').addEventListener('click', () => learnConcept('RSI'));
 document.getElementById('support-concept-card').addEventListener('click', () => learnConcept('Support & Resistance'));
 document.getElementById('macd-concept-card').addEventListener('click', () => learnConcept('MACD'));
@@ -751,14 +752,15 @@ document.getElementById('stop-concept-card').addEventListener('click', () => lea
 document.getElementById('candle-concept-card').addEventListener('click', () => learnConcept('Candlestick Patterns'));
 document.getElementById('risk-concept-card').addEventListener('click', () => learnConcept('Risk:Reward'));
 document.getElementById('tutor-pill-link').addEventListener('click', () => { switchTab('tutor'); askTutor('Why do I keep closing trades too early?') });
-document.getElementById('close-modal-scenario').addEventListener('click', () => closeScenarios);
-document.getElementById('btn-previous').addEventListener('click', () => prevScenario);
-document.getElementById('btn-next-scenario').addEventListener('click', () => nextScenario);
+document.getElementById('close-modal-scenario').addEventListener('click', closeScenarios);
+document.getElementById('btn-previous').addEventListener('click', prevScenario);
+document.getElementById('btn-next-scenario').addEventListener('click', nextScenario);
 document.getElementById('tutorInput').addEventListener('keydown', (event) => { if (event.key === 'Enter') sendTutorMsg() });
-document.getElementById('sendBtn').addEventListener('click', () => sendTutorMsg);
-document.getElementById('btnPastTrades').addEventListener('click', () => showPastTrades);
-document.getElementById('btnManualEntry').addEventListener('click', () => showManualEntry);
-document.getElementById('fetch-past-trades').addEventListener('click', () => fetchPastTrades);
-document.getElementById('btnAnalyzeSelected').addEventListener('click', () => analyzeSelectedTrades);
-document.getElementById('btn-autopsy-run').addEventListener('click', () => runManualAutopsy);
-document.getElementById('selectAll').addEventListener('click', () => toggleSelectAll);
+document.getElementById('sendBtn').addEventListener('click', sendTutorMsg);
+document.getElementById('btnPastTrades').addEventListener('click', showPastTrades);
+document.getElementById('btnManualEntry').addEventListener('click', showManualEntry);
+document.getElementById('fetch-past-trades').addEventListener('click', fetchPastTrades);
+document.getElementById('btnAnalyzeSelected').addEventListener('click', analyzeSelectedTrades);
+document.getElementById('btn-autopsy-run').addEventListener('click', runManualAutopsy);
+document.getElementById('selectAll').addEventListener('click', toggleSelectAll);
+document.querySelectorAll('.trade-checkbox').forEach(el => el.addEventListener('change', updateSelectedTrades));
