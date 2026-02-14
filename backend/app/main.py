@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import ai, deriv, users
 
-app = FastAPI(title="TradePT Backend (with Python FastAPI + SQLite)")
+app = FastAPI(title="PocketPT Backend (with Python FastAPI + SQLite)")
 
 # Configure CORS to allow extension requests
 # FOR DEVELOPMENT: Allow all origins

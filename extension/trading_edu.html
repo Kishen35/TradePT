@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketPT — Learn Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="styles.css" rel="stylesheet">
+</head>
+<body>
+<div class="app">
+
+<!-- ════════════════ NAV ════════════════ -->
+<nav>
+  <div class="nav-brand">
+    Pocket<span class="brand-red">PT</span><span class="brand-dot"></span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('learn')">Learn</button>
+    <button class="nav-tab" onclick="switchTab('tutor')">AI Tutor</button>
+    <button class="nav-tab" onclick="switchTab('autopsy')">Trade Autopsy</button>
+    <button class="nav-tab" onclick="switchTab('leaderboard')">Leaderboard</button>
+  </div>
+  <div class="nav-right">
+    <div class="streak-chip">🔥 <strong id="streakCount">3</strong>d</div>
+    <div class="xp-chip">⚡ <span class="xp-val" id="xpCount">240</span> XP</div>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════
+     LEARN TAB
+════════════════════════════════════════ -->
+<div id="tab-learn" class="tab-page active">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>Personalised Curriculum</div>
+    <h1>Learn the way <em>you</em> trade.</h1>
+    <p>AI-powered lessons built around your instruments, your trades, and your learning style — not generic YouTube content.</p>
+  </div>
+  <div class="main-content">
+
+    <div class="streak-banner">
+      <div class="streak-left">
+        <div class="streak-icon">🔥</div>
+        <div>
+          <div class="streak-count">3-Day Streak</div>
+          <div class="streak-sub">You've learned something new every day this week</div>
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="openScenarios()">Keep it going →</button>
+    </div>
+
+    <div>
+      <div class="section-hd">
+        <div class="section-title">Your Learning Paths</div>
+        <button class="section-link" onclick="showToast('Rebuilding curriculum from your trades...')">Rebuild Curriculum</button>
+      </div>
+      <div class="path-grid">
+        <div class="path-card active" onclick="openScenarios()">
+          <div class="path-badge badge-active">Active</div>
+          <div class="path-icon">📈</div>
+          <div class="path-title">Technical Analysis</div>
+          <div class="path-desc">RSI, MACD, support/resistance. Tailored to synthetic indices.</div>
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill fill-red" style="width:42%"></div></div>
+            <div class="progress-pct">42%</div>
+          </div>
+        </div>
+        <div class="path-card">
+          <div class="path-badge badge-new">New</div>
+          <div class="path-icon">🧠</div>
+          <div class="path-title">Trading Psychology</div>
+          <div class="path-desc">Why you revenge trade after losses. How to stop.</div>
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill fill-teal" style="width:8%"></div></div>
+            <div class="progress-pct">8%</div>
+          </div>
+        </div>
+        <div class="path-card">
+          <div class="path-badge">0 / 8</div>
+          <div class="path-icon">⚖️</div>
+          <div class="path-title">Risk Management</div>
+          <div class="path-desc">Position sizing, stop-loss logic, risk-reward ratios.</div>
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill fill-blue" style="width:0%"></div></div>
+            <div class="progress-pct">0%</div>
+          </div>
+        </div>
+        <div class="path-card">
+          <div class="path-badge badge-locked">🔒 Locked</div>
+          <div class="path-icon">🏆</div>
+          <div class="path-title">Advanced Strategies</div>
+          <div class="path-desc">Wyckoff, ICT concepts, market structure shifts.</div>
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill fill-gold" style="width:0%"></div></div>
+            <div class="progress-pct">0%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-hd">
+        <div class="section-title">Concepts to master</div>
+        <button class="section-link">View all →</button>
+      </div>
+      <div class="concepts-grid">
+        <div class="concept-card done" onclick="learnConcept('RSI')">
+          <div class="concept-icon">📊</div>
+          <div class="concept-title">RSI</div>
+          <div class="concept-desc">Relative Strength Index — momentum oscillator</div>
+          <div class="concept-status done">✓ Completed</div>
+        </div>
+        <div class="concept-card done" onclick="learnConcept('Support & Resistance')">
+          <div class="concept-icon">🧱</div>
+          <div class="concept-title">Support & Resistance</div>
+          <div class="concept-desc">Key price levels that matter</div>
+          <div class="concept-status done">✓ Completed</div>
+        </div>
+        <div class="concept-card" onclick="learnConcept('MACD')">
+          <div class="concept-icon">〰️</div>
+          <div class="concept-title">MACD</div>
+          <div class="concept-desc">Trend & momentum signal crossovers</div>
+          <div class="concept-status todo">→ Up next</div>
+        </div>
+        <div class="concept-card" onclick="learnConcept('Stop Loss Placement')">
+          <div class="concept-icon">🛡️</div>
+          <div class="concept-title">Stop Loss Placement</div>
+          <div class="concept-desc">Where to place stops and why</div>
+          <div class="concept-status todo">→ Start here</div>
+        </div>
+        <div class="concept-card" onclick="learnConcept('Candlestick Patterns')">
+          <div class="concept-icon">🕯️</div>
+          <div class="concept-title">Candlestick Patterns</div>
+          <div class="concept-desc">Doji, engulfing, hammer, shooting star</div>
+          <div class="concept-status todo">— Not started</div>
+        </div>
+        <div class="concept-card" onclick="learnConcept('Risk:Reward')">
+          <div class="concept-icon">⚖️</div>
+          <div class="concept-title">Risk:Reward</div>
+          <div class="concept-desc">How to calculate and why 1:2 matters</div>
+          <div class="concept-status todo">— Not started</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-hd"><div class="section-title">Your skill profile</div></div>
+        <div class="dc-card skill-card">
+          <div class="skill-meters">
+            <div class="skill-row">
+              <div class="skill-name">Technical Analysis</div>
+              <div class="skill-bar"><div class="skill-fill" style="width:42%;background:var(--red)"></div></div>
+              <div class="skill-val">42</div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-name">Risk Management</div>
+              <div class="skill-bar"><div class="skill-fill" style="width:18%;background:var(--info)"></div></div>
+              <div class="skill-val">18</div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-name">Psychology</div>
+              <div class="skill-bar"><div class="skill-fill" style="width:30%;background:var(--warning)"></div></div>
+              <div class="skill-val">30</div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-name">Market Structure</div>
+              <div class="skill-bar"><div class="skill-fill" style="width:10%;background:var(--profit)"></div></div>
+              <div class="skill-val">10</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-hd"><div class="section-title">AI insight</div></div>
+        <div class="dc-card ai-insight-card">
+          <div class="ai-insight-header">
+            <div class="ai-badge">🤖 PocketPT</div>
+            <span style="font-size:11px;color:var(--txt-muted);">Based on your last 5 trades</span>
+          </div>
+          <p class="ai-insight-text">
+            Your <strong>entries are strong</strong>, but you're closing trades too early — averaging only
+            <span style="color:var(--loss);font-weight:600;">0.8R</span> when your setups justify
+            <span style="color:var(--profit);font-weight:600;">2.0R+</span>. Your biggest growth area right now
+            is <strong>trade management after entry</strong>. I've added a lesson specifically about this.
+          </p>
+          <button class="pill-link" onclick="switchTab('tutor');askTutor('Why do I keep closing trades too early?')">Ask me about this →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCENARIOS MODAL (Hidden, triggered from Learn tab)
+════════════════════════════════════════ -->
+<div id="scenarios-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Practice Scenarios</h2>
+      <button class="modal-close" onclick="closeScenarios()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="scenario-card">
+        <div class="scenario-meta">
+          <span class="chip" id="scenarioChip">GOLD / XAU</span>
+          <span class="scenario-num">Question <span id="qNum">1</span> / 4</span>
+        </div>
+        <div class="scenario-context">
+          <p id="scenarioContextText"></p>
+        </div>
+        <div class="market-data-row" id="marketDataRow"></div>
+        <div class="scenario-question">
+          <p id="scenarioQuestion"></p>
+        </div>
+        <div class="choice-grid" id="choiceGrid"></div>
+        <div class="ai-explain" id="aiExplain">
+          <div class="ai-explain-header">
+            <div class="ai-badge">🤖 Explanation</div>
+          </div>
+          <div class="ai-explain-text" id="aiExplainText"></div>
+          <div class="ai-followup-label">Learn more:</div>
+          <div class="ai-followup" id="aiFollowup"></div>
+        </div>
+        <div class="scenario-nav">
+          <button class="btn-secondary" onclick="prevScenario()">← Previous</button>
+          <div class="scenario-score" id="scenarioScore"></div>
+          <button class="btn-primary" onclick="nextScenario()">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     LEADERBOARD TAB
+════════════════════════════════════════ -->
+<div id="tab-leaderboard" class="tab-page">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>Global Ranking</div>
+    <h1>Top <em>Performers</em></h1>
+    <p>Rankings are based on total XP earned from lessons and scenarios. Keep trading to climb the ranks!</p>
+  </div>
+  <div class="main-content">
+    
+    <div class="leaderboard-grid">
+      
+      <!-- LEFT COLUMN: STREAK -->
+      <div class="leaderboard-left">
+        <div class="streak-card-full">
+          <div class="streak-society">Streak Society</div>
+          <div class="streak-main-row">
+            <div>
+              <div class="streak-val-big">1037</div>
+              <div class="streak-label-big">day streak!</div>
+            </div>
+            <div class="streak-flame-icon">🔥</div>
+          </div>
+          <div class="streak-info-banner">
+            <div class="streak-info-icon">☀️</div>
+            <div class="streak-info-text">You've extended your streak 2 times before noon this week!</div>
+          </div>
+        </div>
+
+        <div class="calendar-card">
+          <div class="cal-header">
+            <span>&lt;</span>
+            <span>March 2024</span>
+            <span>&gt;</span>
+          </div>
+          <div class="cal-grid">
+            <div class="cal-day-label">Su</div><div class="cal-day-label">Mo</div><div class="cal-day-label">Tu</div><div class="cal-day-label">We</div><div class="cal-day-label">Th</div><div class="cal-day-label">Fr</div><div class="cal-day-label">Sa</div>
+            
+            <div class="cal-date"></div><div class="cal-date"></div><div class="cal-date"></div><div class="cal-date"></div><div class="cal-date"></div><div class="cal-date active range-start">1</div><div class="cal-date active range-end">2</div>
+            
+            <div class="cal-date active range-start">3</div><div class="cal-date active range">4</div><div class="cal-date active range">5</div><div class="cal-date active range">6</div><div class="cal-date active range">7</div><div class="cal-date active range">8</div><div class="cal-date active range-end">9</div>
+            
+            <div class="cal-date active range-start">10</div><div class="cal-date active range">11</div><div class="cal-date active range">12</div><div class="cal-date active range">13</div><div class="cal-date active range">14</div><div class="cal-date active range">15</div><div class="cal-date active range-end">16</div>
+            
+            <div class="cal-date active range-start">17</div><div class="cal-date active range">18</div><div class="cal-date active range">19</div><div class="cal-date active range">20</div><div class="cal-date active range">21</div><div class="cal-date active range">22</div><div class="cal-date active range-end">23</div>
+            
+            <div class="cal-date">24</div><div class="cal-date active">25</div><div class="cal-date active">26</div><div class="cal-date">27</div><div class="cal-date">28</div><div class="cal-date">29</div><div class="cal-date">30</div>
+            
+            <div class="cal-date">31</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: LEAGUE & LIST -->
+      <div class="leaderboard-right">
+        
+        <div class="leaderboard-league-header">
+          <div class="league-visuals">
+            <div class="league-gem gem-pink"></div>
+            <div class="league-gem gem-dark"></div>
+            <div class="league-gem gem-main">💎</div>
+          </div>
+          <div class="league-title-sub">MY CURRENT LEAGUE</div>
+          <div class="league-title-main">Diamond League</div>
+        </div>
+
+        <div class="league-tiers-card">
+          <div class="tiers-title">Tiers</div>
+          <div class="tiers-grid">
+            <div class="tier-item"><div class="tier-icon">⚙️</div><div class="tier-name">Iron</div></div>
+            <div class="tier-item"><div class="tier-icon">🥉</div><div class="tier-name">Bronze</div></div>
+            <div class="tier-item"><div class="tier-icon">🥈</div><div class="tier-name">Silver</div></div>
+            <div class="tier-item"><div class="tier-icon">🥇</div><div class="tier-name">Gold</div></div>
+            <div class="tier-item"><div class="tier-icon">💠</div><div class="tier-name">Platinum</div></div>
+            <div class="tier-item"><div class="tier-icon">🍀</div><div class="tier-name">Emerald</div></div>
+            <div class="tier-item active"><div class="tier-icon">💎</div><div class="tier-name">Diamond</div></div>
+            <div class="tier-item"><div class="tier-icon">🔮</div><div class="tier-name">Master</div></div>
+            <div class="tier-item"><div class="tier-icon">🔴</div><div class="tier-name">Grandmaster</div></div>
+            <div class="tier-item"><div class="tier-icon">👑</div><div class="tier-name">Challenger</div></div>
+          </div>
+        </div>
+
+        <div class="leaderboard-list-card">
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><div class="medal medal-1">1</div></div></div>
+            <div class="lb-av-circle" style="background:#ffedcc">👤</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Jason</div></div>
+            <div class="lb-xp-col">597 XP</div>
+          </div>
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><div class="medal medal-2">2</div></div></div>
+            <div class="lb-av-circle" style="background:#e0f2ff">👷</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Cindy</div></div>
+            <div class="lb-xp-col">252 XP</div>
+          </div>
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><div class="medal medal-3">3</div></div></div>
+            <div class="lb-av-circle" style="background:#f9ebea">👩‍🎨</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Ashley</div></div>
+            <div class="lb-xp-col">224 XP</div>
+          </div>
+          <div class="lb-item me">
+            <div class="lb-rank-num"><div class="lb-rank-box"><span class="rank-num-flat">4</span></div></div>
+            <div class="lb-av-circle" style="background:var(--red);color:#fff">YOU</div>
+            <div class="lb-name-col"><div class="lb-name-bold">You</div></div>
+            <div class="lb-xp-col">240 XP</div>
+          </div>
+          <div class="lb-item">
+            <div class="lb-rank-num"><div class="lb-rank-box"><span class="rank-num-flat">5</span></div></div>
+            <div class="lb-av-circle" style="background:#e8f8f5">👲</div>
+            <div class="lb-name-col"><div class="lb-name-bold">Sergio</div></div>
+            <div class="lb-xp-col">156 XP</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TUTOR TAB (COMPLETELY UNTOUCHED)
+════════════════════════════════════════ -->
+<div id="tab-tutor" class="tab-page">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>AI-Powered</div>
+    <h1>Your personal <em>trading tutor</em></h1>
+    <p>Ask anything. Get explanations using YOUR instruments, at YOUR level.</p>
+  </div>
+  <div class="main-content">
+    <div class="dc-card tutor-card">
+      <div class="chat-messages" id="tutorMessages">
+        <div class="msg ai">
+          <div class="msg-av ai">🤖</div>
+          <div class="bubble">
+            Hey! I'm your PocketPT tutor. 👋<br><br>
+            I know you trade <strong>Synthetic Indices</strong> and you're at an <strong>intermediate level</strong>.
+            Ask me anything — from explaining RSI to breaking down why your last trade went wrong.<br><br>
+            What would you like to understand today?
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="tutorInput" placeholder="Ask your tutor anything..."
+               onkeydown="if(event.key==='Enter')sendTutorMsg()" />
+        <button class="chat-send" id="sendBtn" onclick="sendTutorMsg()">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     AUTOPSY TAB
+════════════════════════════════════════ -->
+<div id="tab-autopsy" class="tab-page">
+  <div class="page-header">
+    <div class="page-tag"><div class="live-dot-tag"></div>Trade Autopsy</div>
+    <h1>Learn from <em>your own</em> trades</h1>
+    <p>Analyze your past trades from Deriv or manually enter trade details for AI-powered insights.</p>
+  </div>
+  <div class="main-content">
+    
+    <!-- Mode Selection -->
+    <div style="display:flex;gap:12px;margin-bottom:24px;">
+      <button class="btn-primary" id="btnPastTrades" onclick="showPastTrades()" style="flex:1;">
+        📊 Analyze Past Trades
+      </button>
+      <button class="btn-secondary" id="btnManualEntry" onclick="showManualEntry()" style="flex:1;">
+        ✍️ Manual Entry
+      </button>
+    </div>
+
+    <!-- Past Trades Section -->
+    <div id="pastTradesSection" style="display:none;">
+      <div class="dc-card" style="margin-bottom:24px;">
+        <div class="card-hd">
+          <div class="card-title">Your Past Trades from Deriv</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="tradeLimit" class="field-input" style="width:auto;padding:6px 12px;font-size:13px;">
+              <option value="10">Last 10</option>
+              <option value="20" selected>Last 20</option>
+              <option value="50">Last 50</option>
+              <option value="100">Last 100</option>
+            </select>
+            <button class="btn-secondary" onclick="fetchPastTrades()" style="padding:6px 16px;font-size:13px;">
+              🔄 Refresh
+            </button>
+          </div>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="tradesLoading" style="display:none;text-align:center;padding:40px;">
+          <div class="typing-row" style="justify-content:center;">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+          <p style="color:var(--txt-muted);margin-top:12px;font-size:13px;">Loading trades from Deriv...</p>
+        </div>
+
+        <!-- Trades Table -->
+        <div id="tradesTableContainer" style="display:none;">
+          <div style="overflow-x:auto;margin-top:16px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="background:var(--bg-hover);text-align:left;">
+                  <th style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--txt-muted);">
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="cursor:pointer;">
+                  </th>
+                  <th style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--txt-muted);">Contract Type</th>
+                  <th style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--txt-muted);">Symbol</th>
+                  <th style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--txt-muted);">Buy Time</th>
+                  <th style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--txt-muted);">Stake</th>
+                  <th style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--txt-muted);">Duration</th>
+                  <th style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--txt-muted);">P/L</th>
+                </tr>
+              </thead>
+              <tbody id="tradesTableBody">
+              </tbody>
+            </table>
+          </div>
+          
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="color:var(--txt-muted);font-size:13px;">
+                <span id="selectedCount">0</span> trade(s) selected
+              </div>
+              <button class="btn-primary" onclick="analyzeSelectedTrades()" id="btnAnalyzeSelected" disabled>
+                🔬 Analyze Selected Trades
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="tradesError" style="display:none;padding:20px;text-align:center;">
+          <div style="color:var(--loss);font-size:24px;margin-bottom:8px;">⚠️</div>
+          <div style="color:var(--txt);font-weight:500;margin-bottom:4px;" id="errorTitle">Error</div>
+          <div style="color:var(--txt-muted);font-size:13px;" id="errorMessage"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual Entry Section -->
+    <div id="manualEntrySection" style="display:none;">
+      <div class="dc-card autopsy-card">
+        <div class="section-hd" style="margin-bottom:14px;">
+          <div class="section-title">Enter your trade details</div>
+        </div>
+        <div class="input-grid">
+          <div class="field">
+            <div class="field-label">Instrument</div>
+            <select class="field-input" id="tradeInstrument">
+              <option>Gold (XAU/USD)</option>
+              <option>EUR/USD</option>
+              <option>Volatility 75</option>
+              <option>Volatility 100</option>
+              <option>Boom 1000</option>
+              <option>Crash 500</option>
+              <option>Bitcoin (BTC)</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="field-label">Direction</div>
+            <select class="field-input" id="tradeDir">
+              <option>BUY (Long)</option>
+              <option>SELL (Short)</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="field-label">Entry Price</div>
+            <input class="field-input" id="tradeEntry" placeholder="e.g. 2345.50" type="number" />
+          </div>
+          <div class="field">
+            <div class="field-label">Exit Price</div>
+            <input class="field-input" id="tradeExit" placeholder="e.g. 2312.00" type="number" />
+          </div>
+          <div class="field">
+            <div class="field-label">Stop Loss</div>
+            <input class="field-input" id="tradeSL" placeholder="e.g. 2330.00" type="number" />
+          </div>
+          <div class="field">
+            <div class="field-label">Take Profit</div>
+            <input class="field-input" id="tradeTP" placeholder="e.g. 2380.00" type="number" />
+          </div>
+          <div class="field">
+            <div class="field-label">Result ($)</div>
+            <input class="field-input" id="tradeResult" placeholder="e.g. -45.00" type="number" />
+          </div>
+          <div class="field">
+            <div class="field-label">Your Experience</div>
+            <select class="field-input" id="traderLevel">
+              <option>Beginner</option>
+              <option selected>Intermediate</option>
+              <option>Advanced</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <div class="field-label">What were you thinking? (optional)</div>
+          <textarea class="field-input" id="tradeThoughts"
+            placeholder="e.g. I saw RSI was oversold so I bought, but the price kept falling..."
+            style="resize:vertical;min-height:64px;line-height:1.5;padding-top:8px;"></textarea>
+        </div>
+        <button class="autopsy-run" onclick="runManualAutopsy()">🔬 Analyse This Trade</button>
+      </div>
+    </div>
+
+    <!-- Autopsy Results (Shared by both modes) -->
+    <div class="autopsy-result" id="autopsyResult">
+      <div class="verdict-row">
+        <div class="verdict-icon" id="verdictIcon"></div>
+        <div>
+          <div class="verdict-title" id="verdictLabel"></div>
+          <div class="verdict-sub" id="verdictSub"></div>
+        </div>
+      </div>
+      <div class="lessons" id="autopsyLessons"></div>
+      <div class="next-step-block">
+        <div class="next-step-label">Next step</div>
+        <div class="next-step-text" id="autopsyNextStep"></div>
+        <div class="next-step-actions" id="autopsyActions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /.app -->
+
+<!-- XP Toast -->
+<div class="xp-toast" id="xpToast">
+  <div>
+    <div class="xp-amount" id="xpAmount">+20 XP</div>
+    <div class="xp-label" id="xpReason">Correct answer!</div>
+  </div>
+</div>
+
+<!-- Include AI Integration Module -->
+<script src="ai-integration.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// Mock state object for standalone usage (when no Chrome extension)
+// ══════════════════════════════════════════════════════════════
+if (typeof state === 'undefined') {
+  window.state = {
+    balance: null,
+    currentSymbol: null,
+    winRate: null,
+    positions: [],
+    recentTrades: []
+  };
+  console.log('💡 Running in standalone mode (no Chrome extension detected)');
+}
+
+// ══════════════════════════════════════════════════════════════
+// Initialize AI Integration
+// ══════════════════════════════════════════════════════════════
+let aiIntegration;
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize AI Integration
+  if (window.AIIntegration) {
+    aiIntegration = new AIIntegration();
+    console.log('✅ AI Integration initialized');
+    console.log('📡 Backend URL:', aiIntegration.backendUrl);
+  } else {
+    console.warn('⚠️ AI Integration module not found - check that ai-integration.js is loaded');
+  }
+  
+  loadScenario(0);
+  
+  // Default to manual entry for autopsy
+  showManualEntry();
+});
+
+// ══════════════════════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════════════════════
+let xp = 240, streak = 3;
+let currentScenario = 0, scenarioAnswered = false;
+let score = 0, totalAnswered = 0;
+
+// ══════════════════════════════════════════════════════════════
+// Tabs (Fixed to work with new navigation structure)
+// ══════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const idx = ['learn','tutor','autopsy','leaderboard'].indexOf(tab);
+  document.querySelectorAll('.nav-tab')[idx]?.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════
+// Scenarios Modal Functions (Not in top navigation, triggered from Learn tab)
+// ══════════════════════════════════════════════════════════════
+function openScenarios() {
+  document.getElementById('scenarios-modal').style.display = 'flex';
+  loadScenario(currentScenario);
+}
+
+function closeScenarios() {
+  document.getElementById('scenarios-modal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modal = document.getElementById('scenarios-modal');
+  if (event.target === modal) {
+    closeScenarios();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// XP & Toast
+// ══════════════════════════════════════════════════════════════
+function addXP(amount, reason) {
+  xp += amount;
+  document.getElementById('xpCount').textContent = xp;
+  document.getElementById('xpAmount').textContent = '+' + amount + ' XP';
+  document.getElementById('xpReason').textContent = reason;
+  const t = document.getElementById('xpToast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function showToast(msg) {
+  document.getElementById('xpReason').textContent = msg;
+  document.getElementById('xpAmount').textContent = '💡';
+  const t = document.getElementById('xpToast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Scenarios (unchanged - still using hardcoded data)
+// ══════════════════════════════════════════════════════════════
+const scenarios = [
+  {
+    chip:'GOLD / XAU', chipClass:'chip-default',
+    contextText:`Gold has been climbing for 3 consecutive days after the US Federal Reserve signalled it would keep interest rates unchanged. The US Dollar Index (DXY) has weakened, and there's rising geopolitical tension in the Middle East. Gold is currently sitting just below a key resistance level at $2,380.`,
+    marketData:[{label:'XAU/USD',val:'$2,374.20',cls:'up'},{label:'3-Day Change',val:'+1.8%',cls:'up'},{label:'RSI (14)',val:'68.4',cls:'neutral'},{label:'DXY',val:'102.1 ↓',cls:'down'}],
+    question:'Given these conditions, a trader wants to go <em>LONG on Gold</em>. Which is the strongest reason to support that decision?',
+    choices:[{l:'A',t:'Gold has gone up 3 days in a row, so it will keep going up.'},{l:'B',t:'Weak Dollar + stable rates + geopolitical uncertainty = classic safe-haven demand for Gold.'},{l:'C',t:"RSI is near 70 which means it's about to shoot up even higher."},{l:'D',t:"Gold always goes up, it's the safest trade."}],
+    correct:1,
+    explanation:`<strong>B is correct</strong> — a great example of <span class="hl">macro confluence</span>.<br><br>When the US Dollar weakens, Gold typically rises because it's priced in USD. Add <strong>stable/low interest rates</strong> and <strong>geopolitical risk</strong> and you have three independent reasons aligning.<br><br><strong>Why the others are wrong:</strong><br>• <strong>A</strong> is <span class="hl">recency bias</span> — past movement doesn't predict future movement on its own.<br>• <strong>C</strong> is backwards — RSI near 70 signals <em>overbought</em>, a caution signal.<br>• <strong>D</strong> is a dangerous myth.`,
+    followups:['What is RSI overbought?','How does DXY affect Gold?','What is safe-haven demand?']
+  },
+  {
+    chip:'VOLATILITY 75', chipClass:'chip-teal',
+    contextText:`You're trading Volatility 75 Index on Deriv. The market has been ranging between 8,200 and 8,500 for the past 4 hours. You spot what looks like a breakout above 8,500 — but the candle that broke out was a very small-bodied candle with a long wick. Volume (pip movement) is lower than the previous candles.`,
+    marketData:[{label:'V75 Price',val:'8,518',cls:'up'},{label:'Range High',val:'8,500',cls:'neutral'},{label:'Candle Body',val:'Small',cls:'down'},{label:'RSI (14)',val:'62.1',cls:'neutral'}],
+    question:'You see price break above the range. Should you immediately <em>enter a LONG trade</em>?',
+    choices:[{l:'A',t:'Yes! Breakout confirmed — enter immediately for maximum profit.'},{l:'B',t:'Wait for a candle close above 8,500 AND a retest of that level before entering.'},{l:'C',t:'No — RSI at 62 means the move is already over.'},{l:'D',t:'Enter a SHORT trade — the small wick candle signals a reversal.'}],
+    correct:1,
+    explanation:`<strong>B is the disciplined answer</strong> — this separates profitable traders from impulsive ones.<br><br>Small candle body + long wick + low volatility = classic signs of a <span class="hl">false breakout</span>. Synthetic indices frequently "poke" above resistance to trigger stops before reversing.<br><br><strong>The correct process:</strong><br>1. Wait for a <strong>full candle close</strong> above 8,500<br>2. Wait for a <strong>retest</strong> — price returns to 8,500, holds as support, then bounces<br>3. <em>Then</em> enter with stop below the retest candle`,
+    followups:['What is a false breakout?','How do I spot a retest?','What candle body size matters?']
+  },
+  {
+    chip:'PSYCHOLOGY', chipClass:'chip-red',
+    contextText:`You just took a loss of $50 on a V75 trade. You were certain about your setup but the market moved against you. You still have $200 in your account. You're feeling frustrated and want to "make it back quickly." You spot another trade that looks okay but not perfect — your usual rules say to skip it.`,
+    marketData:[{label:'Account',val:'$200',cls:'neutral'},{label:'Just Lost',val:'-$50',cls:'down'},{label:'Account Down',val:'-25%',cls:'down'},{label:'Setup Quality',val:'Below avg',cls:'down'}],
+    question:'You break your rules and enter the trade anyway. What are you experiencing?',
+    choices:[{l:'A',t:'Smart trading — catching up losses is part of trading strategy.'},{l:'B',t:'Revenge trading driven by emotional bias — one of the most common causes of blown accounts.'},{l:'C',t:'FOMO — fear of missing a potential winning trade.'},{l:'D',t:'Confirmation bias — the market always gives you a chance to recover.'}],
+    correct:1,
+    explanation:`<strong>B — Revenge trading.</strong> Recognising it is the most important skill you'll develop.<br><br><span class="hl">Revenge trading</span> happens when <strong>emotion overrides your system</strong>. Your brain wants to restore what it lost immediately.<br><br><strong>What actually happens:</strong><br>• Below-average setup → higher chance of another loss<br>• Another loss → frustration doubles → bigger "recovery" bets<br>• This spiral has blown more accounts than bad analysis<br><br><strong>Professional response:</strong> Close the platform. Walk away 30 minutes.`,
+    followups:['How do I stop revenge trading?','What is FOMO in trading?','How do I build discipline?']
+  },
+  {
+    chip:'RISK MANAGEMENT', chipClass:'chip-default',
+    contextText:`You have a $500 trading account. You've identified a solid setup on EUR/USD. Entry: 1.0850, stop-loss: 1.0820 (30 pips), take-profit: 1.0920 (70 pips). You want to risk 10% of your account on this trade.`,
+    marketData:[{label:'Account Size',val:'$500',cls:'neutral'},{label:'Stop Distance',val:'30 pips',cls:'neutral'},{label:'TP Distance',val:'70 pips',cls:'neutral'},{label:'Risk:Reward',val:'1:2.33',cls:'up'}],
+    question:'Risking 10% ($50) per trade on this setup — is this <em>good risk management</em>?',
+    choices:[{l:'A',t:"Yes — a 1:2.33 RR ratio means you'll be profitable long-term."},{l:'B',t:'Yes — you need to risk more to make more with a small account.'},{l:'C',t:'No — 10% per trade is far too high. 3 consecutive losses wipes 27% of your account.'},{l:'D',t:"Doesn't matter — risk management only matters for large accounts."}],
+    correct:2,
+    explanation:`<strong>C is correct.</strong> The R:R is great — but the <span class="hl">position sizing is dangerous</span>.<br><br>At 10% risk per trade:<br>• 3 losses in a row = account down <strong>27%</strong><br>• 5 losses in a row = account down <strong>41%</strong><br><br><strong>Professional standard: 1–2% per trade</strong><br>At 1% ($5/trade), 10 consecutive losses = only -10% — manageable and recoverable.<br><br><span class="hl">Survival first, profit second.</span>`,
+    followups:['What is the 1% rule?','How do I calculate position size?','What is a drawdown?']
+  }
+];
+
+function loadScenario(idx) {
+  const s = scenarios[idx];
+  scenarioAnswered = false;
+  document.getElementById('qNum').textContent = idx + 1;
+  document.getElementById('scenarioChip').textContent = s.chip;
+  document.getElementById('scenarioChip').className = 'chip ' + s.chipClass;
+  document.getElementById('scenarioContextText').textContent = s.contextText;
+  document.getElementById('marketDataRow').innerHTML = s.marketData.map(d => `
+    <div class="market-datum">
+      <div class="datum-label">${d.label}</div>
+      <div class="datum-val ${d.cls}">${d.val}</div>
+    </div>`).join('');
+  document.getElementById('scenarioQuestion').innerHTML = s.question;
+  document.getElementById('choiceGrid').innerHTML = s.choices.map((c,i) => `
+    <button class="choice-btn" onclick="selectChoice(${i})" id="choice-${i}">
+      <span class="choice-label">${c.l}</span>${c.t}
+    </button>`).join('');
+  document.getElementById('aiExplain').classList.remove('visible');
+  document.getElementById('scenarioScore').textContent = totalAnswered > 0 ? `${score}/${totalAnswered} correct` : '';
+}
+
+function selectChoice(idx) {
+  if (scenarioAnswered) return;
+  scenarioAnswered = true; totalAnswered++;
+  const s = scenarios[currentScenario];
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach((b,i) => { b.disabled = true; if (i===s.correct) b.classList.add('reveal-correct'); });
+  const isCorrect = idx === s.correct;
+  btns[idx].classList.remove('reveal-correct');
+  btns[idx].classList.add(isCorrect ? 'selected-correct' : 'selected-wrong');
+  if (isCorrect) { score++; addXP(20,'Correct answer!'); } else { addXP(5,'Good try — lesson learned!'); }
+  document.getElementById('scenarioScore').textContent = `${score}/${totalAnswered} correct`;
+  document.getElementById('aiExplainText').innerHTML = s.explanation;
+  document.getElementById('aiFollowup').innerHTML = s.followups.map(f =>
+    `<div class="followup-pill" onclick="closeScenarios();switchTab('tutor');askTutor('${f}')">${f}</div>`).join('');
+  document.getElementById('aiExplain').classList.add('visible');
+}
+
+function nextScenario() { currentScenario = (currentScenario+1)%scenarios.length; loadScenario(currentScenario); }
+function prevScenario() { currentScenario = (currentScenario-1+scenarios.length)%scenarios.length; loadScenario(currentScenario); }
+
+// ══════════════════════════════════════════════════════════════
+// AI Tutor - COMPLETELY UNTOUCHED
+// ══════════════════════════════════════════════════════════════
+function askTutor(q) {
+  switchTab('tutor');
+  document.getElementById('tutorInput').value = q;
+  setTimeout(sendTutorMsg, 100);
+}
+
+async function sendTutorMsg() {
+  const input = document.getElementById('tutorInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  
+  input.value = '';
+  document.getElementById('sendBtn').disabled = true;
+  
+  const msgs = document.getElementById('tutorMessages');
+  
+  // Add user message
+  msgs.innerHTML += `
+    <div class="msg user">
+      <div class="msg-av user">👤</div>
+      <div class="bubble">${escapeHtml(msg)}</div>
+    </div>`;
+  
+  // Add typing indicator
+  const tid = 'typing-' + Date.now();
+  msgs.innerHTML += `
+    <div class="msg ai" id="${tid}">
+      <div class="msg-av ai">🤖</div>
+      <div class="bubble">
+        <div class="typing-row">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+    </div>`;
+  
+  msgs.scrollTop = msgs.scrollHeight;
+  
+  try {
+    // Check if AI Integration is initialized
+    if (!aiIntegration) {
+      throw new Error('AI Integration not initialized. Make sure ai-integration.js is loaded.');
+    }
+    
+    // Categorize message for better context
+    const messageType = aiIntegration.categorizeMessage(msg);
+    
+    // Get AI response with full context
+    const response = await aiIntegration.sendMessageToAI(msg, messageType);
+    
+    // Remove typing indicator and add AI response
+    document.getElementById(tid).remove();
+    msgs.innerHTML += `
+      <div class="msg ai">
+        <div class="msg-av ai">🤖</div>
+        <div class="bubble">${formatMd(response)}</div>
+      </div>`;
+    
+  } catch (error) {
+    console.error('Tutor API error:', error);
+    
+    // Determine the type of error for better user feedback
+    let errorMessage = 'I\'m having trouble connecting right now.';
+    let errorDetails = '';
+    
+    if (error.message.includes('not initialized')) {
+      errorMessage = 'AI Integration module not loaded.';
+      errorDetails = 'Make sure ai-integration.js is in the same folder as this HTML file.';
+    } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      errorMessage = 'Cannot connect to backend server.';
+      errorDetails = `Make sure your backend is running on ${aiIntegration?.backendUrl || 'http://localhost:8000'}`;
+    } else if (error.message.includes('404')) {
+      errorMessage = 'Backend endpoint not found.';
+      errorDetails = 'Check that your backend has the /ai/chat endpoint configured.';
+    } else if (error.message.includes('500')) {
+      errorMessage = 'Backend server error.';
+      errorDetails = 'Check your backend logs for details.';
+    } else {
+      errorDetails = error.message;
+    }
+    
+    // Remove typing indicator and show error message
+    document.getElementById(tid).remove();
+    msgs.innerHTML += `
+      <div class="msg ai">
+        <div class="msg-av ai">⚠️</div>
+        <div class="bubble">
+          <strong>${errorMessage}</strong><br><br>
+          ${errorDetails}
+          <div style="font-size:11px;color:var(--txt-muted);margin-top:12px;padding-top:8px;border-top:1px solid var(--border);">
+            <strong>Troubleshooting:</strong><br>
+            1. Check that ai-integration.js is loaded<br>
+            2. Verify backend is running: <code style="background:rgba(0,0,0,0.1);padding:2px 4px;border-radius:3px;">${aiIntegration?.backendUrl || 'http://localhost:8000'}</code><br>
+            3. Open browser console (F12) for detailed errors
+          </div>
+        </div>
+      </div>`;
+  }
+  
+  msgs.scrollTop = msgs.scrollHeight;
+  document.getElementById('sendBtn').disabled = false;
+  input.focus();
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Helper function to format markdown
+function formatMd(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^• (.+)/gm, '<div style="padding-left:12px;margin:2px 0">• $1</div>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function learnConcept(concept) {
+  askTutor(`Explain ${concept} to me, using synthetic indices as examples where possible`);
+  addXP(5, 'Started a new concept!');
+}
+
+// ══════════════════════════════════════════════════════════════
+// Trade Autopsy - Integrated with Deriv API
+// ══════════════════════════════════════════════════════════════
+
+// Global state for trades
+let pastTradesData = [];
+let selectedTradeIds = new Set();
+
+// Toggle between past trades and manual entry
+function showPastTrades() {
+  document.getElementById('pastTradesSection').style.display = 'block';
+  document.getElementById('manualEntrySection').style.display = 'none';
+  document.getElementById('btnPastTrades').className = 'btn-primary';
+  document.getElementById('btnManualEntry').className = 'btn-secondary';
+  document.getElementById('autopsyResult').classList.remove('visible');
+  
+  // Auto-fetch trades if not loaded
+  if (pastTradesData.length === 0) {
+    fetchPastTrades();
+  }
+}
+
+function showManualEntry() {
+  document.getElementById('pastTradesSection').style.display = 'none';
+  document.getElementById('manualEntrySection').style.display = 'block';
+  document.getElementById('btnPastTrades').className = 'btn-secondary';
+  document.getElementById('btnManualEntry').className = 'btn-primary';
+  document.getElementById('autopsyResult').classList.remove('visible');
+}
+
+// Fetch past trades from Deriv via backend
+async function fetchPastTrades() {
+  const limit = parseInt(document.getElementById('tradeLimit').value);
+  
+  // Show loading
+  document.getElementById('tradesLoading').style.display = 'block';
+  document.getElementById('tradesTableContainer').style.display = 'none';
+  document.getElementById('tradesError').style.display = 'none';
+  
+  try {
+    if (!aiIntegration) {
+      throw new Error('AI Integration not initialized');
+    }
+    
+    const response = await fetch(`${aiIntegration.backendUrl}/deriv/profit-table?limit=${limit}&sort=DESC`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Failed to fetch trades: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    pastTradesData = data.transactions || [];
+    
+    if (pastTradesData.length === 0) {
+      showTradesError('No Trades Found', 'No trading history available in your Deriv account.');
+      return;
+    }
+    
+    renderTradesTable(pastTradesData);
+    
+  } catch (error) {
+    console.error('Failed to fetch past trades:', error);
+    
+    let errorTitle = 'Connection Error';
+    let errorMessage = error.message;
+    
+    if (error.message.includes('not initialized')) {
+      errorTitle = 'AI Integration Not Found';
+      errorMessage = 'Make sure ai-integration.js is loaded.';
+    } else if (error.message.includes('Failed to fetch')) {
+      errorTitle = 'Backend Not Available';
+      errorMessage = `Cannot connect to ${aiIntegration?.backendUrl || 'backend'}. Make sure your backend server is running.`;
+    } else if (error.message.includes('NetworkError')) {
+      errorTitle = 'Network Error';
+      errorMessage = 'Check your internet connection and backend server status.';
+    }
+    
+    showTradesError(errorTitle, errorMessage);
+  }
+}
+
+// Render trades table
+function renderTradesTable(trades) {
+  const tbody = document.getElementById('tradesTableBody');
+  tbody.innerHTML = '';
+  
+  trades.forEach((trade, index) => {
+    const buyTime = new Date(trade.buy_time * 1000).toLocaleString();
+    const duration = trade.duration ? formatDuration(trade.duration) : 'N/A';
+    const profitLoss = parseFloat(trade.profit_loss || 0);
+    const isWin = profitLoss >= 0;
+    
+    const row = document.createElement('tr');
+    row.style.borderBottom = '1px solid var(--border)';
+    row.style.transition = 'background 0.2s';
+    row.style.cursor = 'pointer';
+    
+    row.innerHTML = `
+      <td style="padding:12px;">
+        <input type="checkbox" class="trade-checkbox" data-index="${index}" 
+               onchange="updateSelectedTrades()" style="cursor:pointer;">
+      </td>
+      <td style="padding:12px;font-size:13px;">${trade.contract_type || 'N/A'}</td>
+      <td style="padding:12px;font-size:13px;font-weight:500;">${trade.symbol || 'N/A'}</td>
+      <td style="padding:12px;font-size:12px;color:var(--txt-muted);">${buyTime}</td>
+      <td style="padding:12px;font-size:13px;">$${parseFloat(trade.buy_price || 0).toFixed(2)}</td>
+      <td style="padding:12px;font-size:12px;color:var(--txt-muted);">${duration}</td>
+      <td style="padding:12px;font-size:14px;font-weight:600;color:${isWin ? 'var(--profit)' : 'var(--loss)'};">
+        ${isWin ? '+' : ''}$${profitLoss.toFixed(2)}
+      </td>
+    `;
+    
+    // Click row to toggle checkbox
+    row.onclick = (e) => {
+      if (e.target.type !== 'checkbox') {
+        const checkbox = row.querySelector('.trade-checkbox');
+        checkbox.checked = !checkbox.checked;
+        updateSelectedTrades();
+      }
+    };
+    
+    tbody.appendChild(row);
+  });
+  
+  document.getElementById('tradesLoading').style.display = 'none';
+  document.getElementById('tradesTableContainer').style.display = 'block';
+  selectedTradeIds.clear();
+  updateSelectedTrades();
+}
+
+// Format duration
+function formatDuration(seconds) {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+}
+
+// Update selected trades count
+function updateSelectedTrades() {
+  const checkboxes = document.querySelectorAll('.trade-checkbox:checked');
+  selectedTradeIds.clear();
+  checkboxes.forEach(cb => selectedTradeIds.add(parseInt(cb.dataset.index)));
+  
+  document.getElementById('selectedCount').textContent = selectedTradeIds.size;
+  document.getElementById('btnAnalyzeSelected').disabled = selectedTradeIds.size === 0;
+}
+
+// Toggle select all
+function toggleSelectAll() {
+  const selectAll = document.getElementById('selectAll').checked;
+  document.querySelectorAll('.trade-checkbox').forEach(cb => {
+    cb.checked = selectAll;
+  });
+  updateSelectedTrades();
+}
+
+// Show error state
+function showTradesError(title, message) {
+  document.getElementById('tradesLoading').style.display = 'none';
+  document.getElementById('tradesTableContainer').style.display = 'none';
+  document.getElementById('tradesError').style.display = 'block';
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorMessage').textContent = message;
+}
+
+// Analyze selected trades with AI
+async function analyzeSelectedTrades() {
+  if (selectedTradeIds.size === 0) return;
+  
+  const selectedTrades = Array.from(selectedTradeIds).map(index => pastTradesData[index]);
+  
+  // Show loading
+  const resultEl = document.getElementById('autopsyResult');
+  resultEl.classList.add('visible');
+  document.getElementById('verdictIcon').textContent = '🔬';
+  document.getElementById('verdictLabel').textContent = 'Analyzing...';
+  document.getElementById('verdictLabel').className = 'verdict-title';
+  document.getElementById('verdictSub').textContent = `Analyzing ${selectedTrades.length} trade(s)...`;
+  document.getElementById('autopsyLessons').innerHTML = `
+    <div style="color:var(--txt-muted);font-size:12px;padding:20px;text-align:center;">
+      <div class="typing-row" style="justify-content:center;">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>`;
+  document.getElementById('autopsyNextStep').innerHTML = '';
+  document.getElementById('autopsyActions').innerHTML = '';
+  
+  try {
+    // Build detailed analysis request
+    const tradesText = selectedTrades.map((trade, i) => {
+      const profitLoss = parseFloat(trade.profit_loss || 0);
+      const buyPrice = parseFloat(trade.buy_price || 0);
+      const sellPrice = parseFloat(trade.sell_price || 0);
+      
+      return `
+Trade ${i + 1}:
+- Contract: ${trade.contract_type || 'Unknown'}
+- Symbol: ${trade.symbol || 'Unknown'}
+- Buy Price: $${buyPrice.toFixed(2)}
+- Sell Price: $${sellPrice.toFixed(2)}
+- Stake: $${buyPrice.toFixed(2)}
+- P/L: $${profitLoss.toFixed(2)} (${profitLoss >= 0 ? 'WIN' : 'LOSS'})
+- Duration: ${formatDuration(trade.duration || 0)}
+- Buy Time: ${new Date(trade.buy_time * 1000).toLocaleString()}
+${trade.sell_time ? `- Sell Time: ${new Date(trade.sell_time * 1000).toLocaleString()}` : ''}
+      `.trim();
+    }).join('\n\n');
+    
+    const analysisMessage = `Analyze these ${selectedTrades.length} trades from my Deriv trading history:
+
+${tradesText}
+
+Please provide:
+1. **Overall Performance Summary**: Win rate, total P/L, average trade duration
+2. **Pattern Detection**: 
+   - Are there signs of revenge trading after losses?
+   - Overtrading patterns?
+   - Time-of-day patterns (when do I win/lose most)?
+   - Symbol preferences and performance per symbol
+3. **What I'm Doing Well**: Specific strengths in my trading
+4. **Key Areas for Improvement**: Critical weaknesses to address
+5. **Actionable Recommendations**: Specific, concrete steps to improve
+6. **Suggested Learning Topics**: Concepts I should study based on my mistakes
+
+Format your response with clear sections and be specific with numbers and examples from the trades.`;
+    
+    const response = await aiIntegration.sendMessageToAI(analysisMessage, 'analysis');
+    
+    // Calculate aggregate stats
+    const totalPL = selectedTrades.reduce((sum, t) => sum + parseFloat(t.profit_loss || 0), 0);
+    const wins = selectedTrades.filter(t => parseFloat(t.profit_loss || 0) >= 0).length;
+    const losses = selectedTrades.length - wins;
+    const winRate = ((wins / selectedTrades.length) * 100).toFixed(1);
+    const avgWin = wins > 0 ? selectedTrades
+      .filter(t => parseFloat(t.profit_loss || 0) >= 0)
+      .reduce((sum, t) => sum + parseFloat(t.profit_loss || 0), 0) / wins : 0;
+    const avgLoss = losses > 0 ? selectedTrades
+      .filter(t => parseFloat(t.profit_loss || 0) < 0)
+      .reduce((sum, t) => sum + parseFloat(t.profit_loss || 0), 0) / losses : 0;
+    
+    // Render results
+    document.getElementById('verdictIcon').textContent = totalPL >= 0 ? '✅' : '📉';
+    document.getElementById('verdictLabel').textContent = `${selectedTrades.length} Trades Analyzed`;
+    document.getElementById('verdictLabel').className = 'verdict-title ' + (totalPL >= 0 ? 'win' : 'loss');
+    document.getElementById('verdictSub').textContent = 
+      `Win Rate: ${winRate}% (${wins}W/${losses}L) | Total P/L: ${totalPL >= 0 ? '+' : ''}$${totalPL.toFixed(2)} | Avg Win: $${avgWin.toFixed(2)} | Avg Loss: $${avgLoss.toFixed(2)}`;
+    
+    document.getElementById('autopsyLessons').innerHTML = `
+      <div class="lesson-row">
+        <div class="lesson-badge">🤖</div>
+        <div class="lesson-text"><strong>AI Analysis:</strong><br>${formatMd(response)}</div>
+      </div>`;
+    
+    document.getElementById('autopsyNextStep').innerHTML = 
+      `<span style="color:var(--info);font-weight:600;">Next: </span>Review the patterns identified and ask your tutor for specific guidance on improvement areas.`;
+    
+    document.getElementById('autopsyActions').innerHTML = `
+      <button class="followup-pill" onclick="switchTab('tutor');askTutor('Based on my recent ${selectedTrades.length} trades analysis, what specific habits should I change?')">Ask tutor about habits →</button>
+      <button class="followup-pill" onclick="openScenarios()">Practice scenario →</button>`;
+    
+    addXP(20, `Analyzed ${selectedTrades.length} trades!`);
+    resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+  } catch (error) {
+    console.error('Analysis failed:', error);
+    showAnalysisError(error);
+  }
+}
+
+// Manual autopsy
+async function runManualAutopsy() {
+  const instrument = document.getElementById('tradeInstrument').value;
+  const dir        = document.getElementById('tradeDir').value;
+  const entry      = parseFloat(document.getElementById('tradeEntry').value) || 0;
+  const exitP      = parseFloat(document.getElementById('tradeExit').value)  || 0;
+  const sl         = parseFloat(document.getElementById('tradeSL').value)    || 0;
+  const tp         = parseFloat(document.getElementById('tradeTP').value)    || 0;
+  const result     = parseFloat(document.getElementById('tradeResult').value)|| 0;
+  const level      = document.getElementById('traderLevel').value.toLowerCase();
+  const thoughts   = document.getElementById('tradeThoughts').value;
+
+  // Validate required fields
+  if (!entry || !exitP) {
+    alert('Please enter at least Entry Price and Exit Price');
+    return;
+  }
+
+  // Show loading state
+  const resultEl = document.getElementById('autopsyResult');
+  resultEl.classList.add('visible');
+  document.getElementById('verdictIcon').textContent = '🔬';
+  document.getElementById('verdictLabel').textContent = 'Analysing...';
+  document.getElementById('verdictLabel').className = 'verdict-title';
+  document.getElementById('verdictSub').textContent = 'Please wait while we analyse your trade';
+  document.getElementById('autopsyLessons').innerHTML = `
+    <div style="color:var(--txt-muted);font-size:12px;padding:20px;text-align:center;">
+      <div class="typing-row" style="justify-content:center;">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>`;
+  document.getElementById('autopsyNextStep').innerHTML = '';
+  document.getElementById('autopsyActions').innerHTML = '';
+
+  try {
+    if (!aiIntegration) {
+      throw new Error('AI Integration not initialized. Make sure ai-integration.js is loaded.');
+    }
+
+    // Calculate R:R and other metrics
+    const rr = sl && tp ? Math.abs(tp - entry) / Math.abs(entry - sl) : null;
+    const hitSL = sl && ((dir.includes('BUY') && exitP <= sl) || (dir.includes('SELL') && exitP >= sl));
+    const hitTP = tp && ((dir.includes('BUY') && exitP >= tp) || (dir.includes('SELL') && exitP <= tp));
+
+    // Prepare autopsy request
+    const autopsyMessage = `Analyse this ${level} trader's manual trade entry:
+      
+**Trade Details:**
+- Instrument: ${instrument}
+- Direction: ${dir}
+- Entry Price: ${entry}
+- Exit Price: ${exitP}
+- Stop Loss: ${sl || 'Not set'}
+- Take Profit: ${tp || 'Not set'}
+- Result: $${result}
+- Risk:Reward Ratio: ${rr ? `1:${rr.toFixed(2)}` : 'Not calculated (no SL/TP)'}
+${hitSL ? '- **Hit Stop Loss**: Yes' : ''}
+${hitTP ? '- **Hit Take Profit**: Yes' : ''}
+${thoughts ? `- Trader's thoughts: "${thoughts}"` : ''}
+
+**Analysis Required:**
+1. **Trade Execution Quality**: Was this a good setup? Did they follow proper risk management?
+2. **Psychology Check**: Any signs of emotional trading, FOMO, revenge trading, or overconfidence?
+3. **Key Lesson**: What's the ONE most important takeaway from this trade?
+4. **Specific Improvements**: Concrete actions to take on the next trade
+5. **Suggested Concept**: What trading concept should they study based on this trade?
+
+Be specific, actionable, and educational. Use numbers from the trade data.`;
+
+    // Get AI analysis
+    const response = await aiIntegration.sendMessageToAI(autopsyMessage, 'analysis');
+    
+    // Parse and render the response
+    renderAutopsyFromText(response, instrument, dir, result, entry, exitP, sl, tp, rr);
+    
+  } catch (error) {
+    console.error('Autopsy API failed:', error);
+    showAnalysisError(error);
+  }
+
+  addXP(15, 'Trade analysed!');
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderAutopsyFromText(aiResponse, instrument, dir, result, entry, exitP, sl, tp, rr) {
+  const isWin = result > 0;
+
+  // Set verdict
+  document.getElementById('verdictIcon').textContent = isWin ? '✅' : '📉';
+  document.getElementById('verdictLabel').textContent = isWin ? 'Winning Trade' : 'Losing Trade';
+  document.getElementById('verdictLabel').className = 'verdict-title ' + (isWin ? 'win' : 'loss');
+  document.getElementById('verdictSub').textContent = 
+    `${instrument} ${dir} | ${result >= 0 ? '+' : ''}$${result.toFixed(2)} | ${rr ? 'R:R 1:' + rr.toFixed(2) : 'No R:R set'}`;
+
+  // Render AI analysis
+  document.getElementById('autopsyLessons').innerHTML = `
+    <div class="lesson-row">
+      <div class="lesson-badge">🤖</div>
+      <div class="lesson-text"><strong>AI Analysis:</strong><br>${formatMd(aiResponse)}</div>
+    </div>`;
+
+  // Set next steps
+  document.getElementById('autopsyNextStep').innerHTML = 
+    `<span style="color:var(--info);font-weight:600;">Next: </span>Review the analysis above and implement the specific improvements suggested.`;
+
+  document.getElementById('autopsyActions').innerHTML = `
+    <button class="followup-pill" onclick="switchTab('tutor');askTutor('Based on my last ${instrument} trade, what should I focus on improving?')">Ask tutor →</button>
+    <button class="followup-pill" onclick="openScenarios()">Practice scenario →</button>`;
+}
+
+function showAnalysisError(error) {
+  let errorTitle = 'Analysis Failed';
+  let errorMessage = 'Unable to analyze trades';
+  
+  if (error.message.includes('not initialized')) {
+    errorTitle = 'AI Not Available';
+    errorMessage = 'AI Integration module not loaded. Make sure ai-integration.js is in the same folder.';
+  } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+    errorTitle = 'Connection Failed';
+    errorMessage = `Cannot connect to backend server at ${aiIntegration?.backendUrl || 'http://localhost:8000'}. Make sure it's running.`;
+  } else if (error.message.includes('404')) {
+    errorTitle = 'Endpoint Not Found';
+    errorMessage = 'The /ai/chat endpoint was not found on your backend. Check your API configuration.';
+  } else if (error.message.includes('500')) {
+    errorTitle = 'Server Error';
+    errorMessage = 'Backend server encountered an error. Check your backend logs.';
+  } else {
+    errorMessage = error.message;
+  }
+  
+  document.getElementById('verdictIcon').textContent = '⚠️';
+  document.getElementById('verdictLabel').textContent = errorTitle;
+  document.getElementById('verdictLabel').className = 'verdict-title loss';
+  document.getElementById('verdictSub').textContent = errorMessage;
+  document.getElementById('autopsyLessons').innerHTML = `
+    <div class="lesson-row">
+      <div class="lesson-badge">ℹ️</div>
+      <div class="lesson-text">
+        <strong>Error Details:</strong> ${errorMessage}<br><br>
+        <strong>Troubleshooting:</strong><br>
+        1. Ensure ai-integration.js is loaded (check browser console)<br>
+        2. Verify backend is running: <code style="background:rgba(0,0,0,0.1);padding:2px 4px;border-radius:3px;">${aiIntegration?.backendUrl || 'http://localhost:8000'}</code><br>
+        3. Test backend with curl or browser: <code style="background:rgba(0,0,0,0.1);padding:2px 4px;border-radius:3px;">${aiIntegration?.backendUrl || 'http://localhost:8000'}/deriv/profit-table?limit=10</code>
+      </div>
+    </div>`;
+  document.getElementById('autopsyNextStep').innerHTML = '';
+  document.getElementById('autopsyActions').innerHTML = '';
+}
+
+</script>
+</body>
+</html>
