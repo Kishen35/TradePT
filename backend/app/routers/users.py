@@ -18,7 +18,7 @@ def register_user(user: UserSchemas.UserCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered!")
 
-    db_user = UserModels.User(name=user.name, email=user.email, password=user.password)
+    db_user = UserModels.User(name=user.name, email=user.email, password=user.password, experience_level=user.experience_level, trading_duration=user.trading_duration, risk_tolerance=user.risk_tolerance, capital_allocation=user.capital_allocation, asset_preference=user.asset_preference)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
