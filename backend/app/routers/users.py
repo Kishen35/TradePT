@@ -58,3 +58,4 @@ def set_trader_type(user_id: int, payload: UserSchemas.TraderTypeUpdate, db: Ses
     user.trader_type = payload.trader_type
     db.commit()
     db.refresh(user)
+    return user

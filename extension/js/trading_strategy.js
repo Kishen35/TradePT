@@ -308,7 +308,7 @@ async function startCurriculum() {
   let updatedUser = session;
 
   try {
-    const resp = fetch(`${BACKEND_URL}/users/${session.id}/trader-type`, {
+    const resp = await fetch(`${BACKEND_URL}/users/${session.id}/trader-type`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -356,7 +356,7 @@ async function startCurriculum() {
 
   // 3. Generate curriculum
   try {
-    const genResp = fetch(`${BACKEND_URL}/education/generate-curriculum`, {
+    const genResp = await fetch(`${BACKEND_URL}/education/generate-curriculum`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
