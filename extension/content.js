@@ -1121,16 +1121,22 @@ function injectPocketPTTab() {
   }
 }
 
-function togglePocketPTDashboard(show) {
+function togglePocketPTDashboard(show, url = 'views/trading_edu.html') {
   let iframe = document.getElementById('pocketpt-dashboard-overlay');
   const tabWrapper = document.getElementById('pocketpt-nav-tab');
   const tab = document.querySelector('.pocketpt-tab');
+
+  // Also check for the old strategy overlay and remove it if it exists to prevent conflicts
+  const oldStrategyOverlay = document.getElementById('pocketpt-strategy-overlay');
+  if (oldStrategyOverlay) oldStrategyOverlay.remove();
+  const oldBackBtn = document.getElementById('pocketpt-strategy-back-btn');
+  if (oldBackBtn) oldBackBtn.remove();
 
   if (show) {
     if (!iframe) {
       iframe = document.createElement('iframe');
       iframe.id = 'pocketpt-dashboard-overlay';
-      iframe.src = chrome.runtime.getURL('views/trading_edu.html');
+      iframe.src = chrome.runtime.getURL(url);
       Object.assign(iframe.style, {
         position: 'fixed',
         top: '48px',
@@ -1138,12 +1144,17 @@ function togglePocketPTDashboard(show) {
         width: '100vw',
         height: 'calc(100vh - 48px)',
         border: 'none',
-        zIndex: '99', // Significantly lowered to stay behind Deriv's dropdowns (usually 100-1000+)
+        zIndex: '99', // Significantly lowered to stay behind Deriv's dropdowns
         background: '#f2f3f4',
         display: 'block'
       });
       document.body.appendChild(iframe);
     } else {
+      // If the URL is different, update it
+      const targetSrc = chrome.runtime.getURL(url);
+      if (iframe.src !== targetSrc) {
+        iframe.src = targetSrc;
+      }
       iframe.style.display = 'block';
     }
 
@@ -1167,68 +1178,12 @@ function togglePocketPTDashboard(show) {
     // Remove active state
     if (tabWrapper) tabWrapper.className = '';
     if (tab) tab.classList.remove('active');
-
-    // Note: Deriv's own routing will naturally set the other tabs to active when clicked
   }
 }
 
-// --- PocketPT Trading Strategy Page Display
+// --- PocketPT Trading Strategy Page Display (Now uses the seamless toggle)
 function togglePocketPTStrategy() {
-  let iframe = document.getElementById('pocketpt-strategy-overlay');
-  let backBtn = document.getElementById('pocketpt-strategy-back-btn');
-
-  if (!iframe) {
-    // Create iframe
-    iframe = document.createElement('iframe');
-    iframe.id = 'pocketpt-strategy-overlay';
-    iframe.src = chrome.runtime.getURL('views/trading_strategy.html');
-
-    // FULL SCREEN STYLE
-    Object.assign(iframe.style, {
-      position: 'fixed',
-      top: '48px',
-      left: '0',
-      width: '100vw',
-      height: 'calc(100vh - 48px - 36px)', // ✅ spaces added
-      border: 'none',
-      zIndex: '999999',
-      background: '#fff',
-      display: 'block'
-    });
-
-    document.body.appendChild(iframe);
-
-    // Create Back Button
-    backBtn = document.createElement('button');
-    backBtn.id = 'pocketpt-strategy-back-btn';
-    backBtn.innerText = '← Back';
-
-    Object.assign(backBtn.style, {
-      position: 'fixed',
-      bottom: '50px',
-      left: '20px',
-      zIndex: '1000000',
-      padding: '10px 16px',
-      fontSize: '14px',
-      cursor: 'pointer',
-      borderRadius: '6px',
-      border: 'none',
-      background: '#000',
-      color: '#fff'
-    });
-
-    backBtn.onclick = () => {
-      iframe.remove();
-      backBtn.remove();
-    };
-
-    document.body.appendChild(backBtn);
-
-  } else {
-    // If already exists, remove both
-    iframe.remove();
-    if (backBtn) backBtn.remove();
-  }
+  togglePocketPTDashboard(true, 'views/trading_strategy.html');
 }
 
 // Init
