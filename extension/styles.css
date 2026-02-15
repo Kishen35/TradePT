@@ -247,11 +247,13 @@
 }
 
 .overlay-content {
+    max-height: 90vh;
     background: #151717;
     width: 340px;
     border-radius: 8px;
     border: 1px solid #323738;
     overflow: hidden;
+    overflow-y: auto;
 }
 
 .overlay-header {
