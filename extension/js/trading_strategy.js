@@ -53,7 +53,8 @@ async function callClaude(systemPrompt, userMessage) {
   }
 
   const data = await response.json();
-  const raw = data.content.map(b => b.text || "").join("");
+  // Backend returns { model, response, usage }
+  const raw = data.response || "";
   // Strip markdown code fences if the model wraps its JSON
   return raw.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
 }
@@ -116,6 +117,7 @@ Keep descriptions punchy and authentic to retail traders. Vary the exact framing
 
   try {
     const raw = await callClaude(systemPrompt, "Generate two trading strategy profiles for PocketPT onboarding.");
+    if (!raw) throw new Error("Empty response from AI");
     const parsed = JSON.parse(raw);
     parsed.strategies.forEach(s => { profileData[s.side] = s; });
     renderCards();
@@ -130,7 +132,7 @@ function showCardError(side, err) {
   document.getElementById('body-' + side).innerHTML = `
     <div class="error-msg">
       <strong>Failed to load profile.</strong> ${err.message}<br>
-      <button class="btn-ghost" style="margin-top:10px;font-size:12px" id='btnGhostRetry">↻ Retry</button>
+      <button class="btn-ghost" style="margin-top:10px;font-size:12px" id="btnGhostRetry">↻ Retry</button>
     </div>`;
 }
 
@@ -150,7 +152,7 @@ function renderCards() {
     document.getElementById('body-' + side).innerHTML = `
       <p class="card-desc">${p.description}</p>
       <div class="trait-list">
-        ${p.traits.map(t => `
+        ${(p.traits || []).map(t => `
           <div class="trait-row">
             <div class="trait-icon">${t.icon}</div>
             <div class="trait-text"><strong>${t.label}</strong> — ${t.detail}</div>
@@ -158,20 +160,20 @@ function renderCards() {
       </div>
       <div class="metrics-strip">
         <div class="metric">
-          <div class="metric-val ${colorClass}">${p.metrics.winRate}</div>
+          <div class="metric-val ${colorClass}">${(p.metrics || {}).winRate || '—'}</div>
           <div class="metric-label">Win Rate</div>
         </div>
         <div class="metric">
-          <div class="metric-val ${colorClass}">${p.metrics.rr}</div>
+          <div class="metric-val ${colorClass}">${(p.metrics || {}).rr || '—'}</div>
           <div class="metric-label">Avg R:R</div>
         </div>
         <div class="metric">
-          <div class="metric-val ${colorClass}">${p.metrics.speed}</div>
+          <div class="metric-val ${colorClass}">${(p.metrics || {}).speed || '—'}</div>
           <div class="metric-label">Decision Speed</div>
         </div>
       </div>
       <div class="psych-tags">
-        ${p.psychTags.map(tag => `<div class="psych-tag">${tag}</div>`).join('')}
+        ${(p.psychTags || []).map(tag => `<div class="psych-tag">${tag}</div>`).join('')}
       </div>
       <button class="select-btn select-btn-${side}" id="btn-${side}">${p.btnLabel}</button>`;
   });
@@ -241,12 +243,13 @@ JSON shape:
   try {
     const raw = await callClaude(
       systemPrompt,
-      `The user chose the "${p.title}" style (${p.subtitle}). Their traits: ${p.traits.map(t => t.label).join(', ')}. Their psych profile: ${p.psychTags.join(', ')}. Generate a personalised result panel for them.`
+      `The user chose the "${p.title}" style (${p.subtitle}). Their traits: ${(p.traits || []).map(t => t.label).join(', ')}. Their psych profile: ${(p.psychTags || []).join(', ')}. Generate a personalised result panel for them.`
     );
+    if (!raw) throw new Error("Empty response from AI");
     const result = JSON.parse(raw);
 
     document.getElementById('resultDesc').textContent = result.desc;
-    document.getElementById('insightGrid').innerHTML = result.insights.map(i => `
+    document.getElementById('insightGrid').innerHTML = (result.insights || []).map(i => `
       <div class="insight-card">
         <div class="insight-label">${i.label}</div>
         <div class="insight-val">${i.val}</div>
@@ -257,10 +260,11 @@ JSON shape:
       <button class="btn-ghost">← Change my mind</button>`;
 
   } catch (err) {
+    const sideLabel = side; // capture side for retry
     document.getElementById('aiResultText').innerHTML = `
       <div class="error-msg">
         <strong>Couldn't generate insight.</strong> ${err.message}<br>
-        <button class="btn-ghost" style="margin-top:10px;font-size:12px" onclick="showResultPanel('${side}')">↻ Retry</button>
+        <button class="btn-ghost" style="margin-top:10px;font-size:12px" id="btnResultRetry" data-side="${sideLabel}">↻ Retry</button>
       </div>`;
     document.getElementById('resultFooter').innerHTML = `
       <button class="btn-primary${side === 'right' ? ' teal' : ''}">Start My Curriculum →</button>
@@ -377,10 +381,8 @@ async function startCurriculum() {
       setTimeout(() => {
         const encoded = btoa(encodeURIComponent(JSON.stringify(updatedUser)));
 
-        window.location.href = `/static/trading_edu.html?session=${encoded}`;
-      }
-
-        , 1200);
+        window.location.href = `./trading_edu.html?session=${encoded}`;
+      }, 1200);
     }
 
     else {
@@ -398,14 +400,8 @@ async function startCurriculum() {
     setTimeout(() => {
       const encoded = btoa(encodeURIComponent(JSON.stringify(updatedUser)));
 
-      window.location.href = `/static/trading_edu.html?session=$ {
-                encoded
-            }
-
-            `;
-    }
-
-      , 1500);
+      window.location.href = `./trading_edu.html?session=${encoded}`;
+    }, 1500);
   }
 }
 
@@ -414,13 +410,37 @@ generateStrategyCards();
 
 
 // ══════════════════════════════════════════════════════════════
-// Click Event Listeners Bindings
+// Click Event Listeners Bindings (Event Delegation)
 // ══════════════════════════════════════════════════════════════
-document.getElementById('card-left').addEventListener('click', () => selectStrategy('left'));
-document.getElementById('card-right').addEventListener('click', () => selectStrategy('right'));
-document.querySelector('.btn-primary').addEventListener('click', () => {
-  addXP(50, 'Curriculum started!');
-});
+document.addEventListener('click', (e) => {
+  // Strategy Card selection
+  const card = e.target.closest('.strategy-card');
+  if (card && card.id) {
+    const side = card.id.replace('card-', '');
+    if (side === 'left' || side === 'right') {
+      selectStrategy(side);
+    }
+  }
 
-document.querySelector('.btn-ghost').addEventListener('click', resetChoice);
-document.querySelector('#btnGhostRetry').addEventListener('click', generateStrategyCards);
+  // Start Curriculum
+  if (e.target.closest('.btn-primary')) {
+    addXP(50, 'Curriculum started!');
+    startCurriculum();
+  }
+
+  // Reset Choice / Change Mind
+  if (e.target.closest('.btn-ghost') && !e.target.closest('.error-msg')) {
+    resetChoice();
+  }
+
+  // Retry generating result panel
+  if (e.target.id === 'btnResultRetry') {
+    const side = e.target.getAttribute('data-side');
+    showResultPanel(side);
+  }
+
+  // Retry generating cards
+  if (e.target.id === 'btnGhostRetry') {
+    generateStrategyCards();
+  }
+});

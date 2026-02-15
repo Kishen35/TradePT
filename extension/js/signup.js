@@ -37,13 +37,21 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
       email,
       password,
     });
+
+    localStorage.setItem("user_session", JSON.stringify(result));
+
     chrome.runtime.sendMessage(
       {
         type: "user_registration_data",
         payload: result,
       },
       () => {
-        alert("Signup successful: Welcome ", name);
+        alert("Signup successful: Welcome " + name);
+        // Open strategy profiling in a new tab and close the popup
+        const encoded = btoa(encodeURIComponent(JSON.stringify(result)));
+        // const url = chrome.runtime.getURL(`views/trading_strategy.html?session=${encoded}`);
+        // chrome.tabs.create({ url });
+        // window.close();
       },
     );
   } catch (error) {
