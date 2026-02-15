@@ -669,10 +669,12 @@ async def get_dashboard_data(
         if prog and prog.status == "completed":
             categories[cat]["completed"] += 1
 
-    # Calculate category progress percentages
+    # Calculate category progress percentages (incremental, not all-or-nothing)
     learning_paths = []
     for cat, data in categories.items():
-        pct = int((data["completed"] / data["total"] * 100)) if data["total"] > 0 else 0
+        # Use average of individual module completion_percent for smoother progress
+        total_completion = sum(m.get("completion_percent", 0) for m in data["modules"])
+        pct = int(total_completion / data["total"]) if data["total"] > 0 else 0
         learning_paths.append({
             "category": cat,
             "progress_percent": pct,
@@ -857,25 +859,33 @@ async def submit_quiz_v2(
     ).first()
     already_completed = progress and progress.status == "completed"
 
+    # Update skill based on quiz performance (always, not just on pass)
+    category_skill_map = {
+        "Technical_Analysis": "skill_technical_analysis",
+        "Risk_Management": "skill_risk_management",
+        "Psychology": "skill_psychology",
+        "Advanced_Strategies": "skill_market_structure",
+    }
+    skill_field = category_skill_map.get(module_def["category"])
+
     if passed and not already_completed:
         # Module completion bonus (only first time)
         module_bonus = module_def["exp_reward"]
         stats.total_exp += module_bonus
         exp_earned += module_bonus
 
-        # Update skill
-        category_skill_map = {
-            "Technical_Analysis": "skill_technical_analysis",
-            "Risk_Management": "skill_risk_management",
-            "Psychology": "skill_psychology",
-            "Advanced_Strategies": "skill_market_structure",
-        }
-        skill_field = category_skill_map.get(module_def["category"])
+        # Full skill boost on pass (+10)
         if skill_field:
             current = getattr(stats, skill_field, 0)
             setattr(stats, skill_field, min(current + 10, 100))
 
         stats.modules_completed_count += 1
+    elif not passed and not already_completed:
+        # Partial skill boost based on score even on fail (+1 to +5)
+        if skill_field:
+            partial_boost = max(1, score // 20)  # e.g. 60% = +3, 40% = +2
+            current = getattr(stats, skill_field, 0)
+            setattr(stats, skill_field, min(current + partial_boost, 100))
 
     # Update streak
     today = date.today()
@@ -892,6 +902,9 @@ async def submit_quiz_v2(
     stats.current_level = (stats.total_exp // 200) + 1
 
     # Update module progress (reuse progress queried above)
+    # completion_percent reflects quiz score (incremental progress)
+    new_completion = 100 if passed else max(score, 10)  # At least 10% for attempting
+
     if not progress:
         progress = UserModuleProgress(
             user_id=submission.user_id,
@@ -899,17 +912,20 @@ async def submit_quiz_v2(
             status="completed" if passed else "in_progress",
             quiz_score=score,
             quiz_attempts=1,
-            completion_percent=100 if passed else 50,
+            completion_percent=new_completion,
             completed_at=datetime.utcnow() if passed else None,
         )
         db.add(progress)
     else:
-        progress.quiz_score = score
+        # Keep the highest score (don't regress on revision)
+        progress.quiz_score = max(progress.quiz_score or 0, score)
         progress.quiz_attempts += 1
-        if passed:
+        progress.completion_percent = max(progress.completion_percent or 0, new_completion)
+        if passed and progress.status != "completed":
             progress.status = "completed"
             progress.completion_percent = 100
             progress.completed_at = datetime.utcnow()
+        # If already completed, keep it completed (revision doesn't regress)
 
     db.commit()
 
@@ -922,6 +938,12 @@ async def submit_quiz_v2(
         "current_level": stats.current_level,
         "passed": passed,
         "explanations": explanations,
+        "skill_scores": {
+            "Technical_Analysis": stats.skill_technical_analysis,
+            "Risk_Management": stats.skill_risk_management,
+            "Psychology": stats.skill_psychology,
+            "Market_Structure": stats.skill_market_structure,
+        },
     }
 
 

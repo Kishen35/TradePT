@@ -23,11 +23,12 @@ with engine.connect() as conn:
 # Register a new user
 @router.post("/", response_model=UserSchemas.UserResponse)
 def register_user(user: UserSchemas.UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(UserModels.User).filter(UserModels.User.email == user.email).first()
+    normalized_email = user.email.strip().lower()
+    existing = db.query(UserModels.User).filter(UserModels.User.email == normalized_email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered!")
 
-    db_user = UserModels.User(name=user.name, email=user.email, password=user.password, experience_level=user.experience_level, trading_duration=user.trading_duration, risk_tolerance=user.risk_tolerance, capital_allocation=user.capital_allocation, asset_preference=user.asset_preference)
+    db_user = UserModels.User(name=user.name, email=normalized_email, password=user.password, experience_level=user.experience_level, trading_duration=user.trading_duration, risk_tolerance=user.risk_tolerance, capital_allocation=user.capital_allocation, asset_preference=user.asset_preference)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -41,8 +42,9 @@ async def list_users(db: Session = Depends(get_db)):
 # Login user (together with Deriv account)
 @router.post("/login", response_model=UserSchemas.UserResponse)
 async def login_user(credentials: UserSchemas.UserLogin, db: Session = Depends(get_db)):
+    normalized_email = credentials.email.strip().lower()
     user = db.query(UserModels.User).filter(
-        UserModels.User.email == credentials.email,
+        UserModels.User.email == normalized_email,
         UserModels.User.password == credentials.password
     ).first()
     if not user:
